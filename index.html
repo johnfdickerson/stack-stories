@@ -106,26 +106,33 @@
         }
         .drag-handle {
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: grab;
-            padding: 8px 4px;
-            opacity: 0.4;
+            padding: 8px 8px;
+            opacity: 0.5;
             transition: opacity 0.2s;
+            touch-action: none;
+            min-width: 30px;
         }
         .drag-handle:active {
             cursor: grabbing;
+            opacity: 1;
         }
         .drag-handle:hover {
             opacity: 0.8;
         }
         .drag-handle-line {
-            width: 20px;
-            height: 2px;
+            width: 3px;
+            height: 30px;
             background: #666;
-            margin: 2px 0;
-            border-radius: 1px;
+            border-radius: 2px;
+        }
+        .story-row.dragging .drag-handle {
+            opacity: 1;
+        }
+        .story-row.dragging .drag-handle-line {
+            background: #0066cc;
         }
         .story-title {
             cursor: pointer;
@@ -334,7 +341,7 @@
             <!-- Stories will be generated here -->
         </div>
         <div class="info-text" id="infoText">
-            Stories are scrambled. Drag to rank by importance. Distribute respite stories. Click story title to toggle sources.
+            Stories are scrambled. Use the | handle to drag and reorder. Long press # to jump to rank. Click story title for sources.
         </div>
         <div class="footer">
             <button class="btn-reset" onclick="resetOrder()" title="Return to original scrambled order">Reset</button>
@@ -548,9 +555,13 @@
                 
                 // Long press functionality
                 let longPressTimer = null;
+                let longPressTriggered = false;
+                
                 rankDiv.addEventListener('mousedown', (e) => {
                     e.stopPropagation();
+                    longPressTriggered = false;
                     longPressTimer = setTimeout(() => {
+                        longPressTriggered = true;
                         openNumberPicker(index);
                     }, 500);
                 });
@@ -560,15 +571,25 @@
                 rankDiv.addEventListener('mouseleave', () => {
                     clearTimeout(longPressTimer);
                 });
+                
                 rankDiv.addEventListener('touchstart', (e) => {
-                    e.stopPropagation();
+                    longPressTriggered = false;
                     longPressTimer = setTimeout(() => {
+                        longPressTriggered = true;
                         openNumberPicker(index);
                     }, 500);
-                });
-                rankDiv.addEventListener('touchend', () => {
+                }, {passive: true});
+                
+                rankDiv.addEventListener('touchend', (e) => {
                     clearTimeout(longPressTimer);
-                });
+                    if (longPressTriggered) {
+                        e.preventDefault();
+                    }
+                }, {passive: false});
+                
+                rankDiv.addEventListener('touchmove', () => {
+                    clearTimeout(longPressTimer);
+                }, {passive: true});
                 
                 storyRow.appendChild(rankDiv);
                 
@@ -586,7 +607,7 @@
                 // Drag handle
                 const dragHandle = document.createElement('div');
                 dragHandle.className = 'drag-handle';
-                dragHandle.innerHTML = '<div class="drag-handle-line"></div><div class="drag-handle-line"></div><div class="drag-handle-line"></div>';
+                dragHandle.innerHTML = '<div class="drag-handle-line"></div>';
                 storyRow.appendChild(dragHandle);
                 
                 // Reason section
@@ -688,32 +709,35 @@
                 let touchStartX = 0;
                 let touchStartY = 0;
                 let isTouchDragging = false;
+                let touchMoved = false;
+                let touchTimer = null;
                 
                 dragHandle.addEventListener('touchstart', (e) => {
                     touchStartX = e.touches[0].clientX;
                     touchStartY = e.touches[0].clientY;
                     isTouchDragging = false;
-                }, false);
+                    touchMoved = false;
+                }, {passive: true});
                 
                 dragHandle.addEventListener('touchmove', (e) => {
-                    if (isTouchDragging) {
-                        e.preventDefault();
-                    }
-                    
                     const touch = e.touches[0];
                     const deltaX = Math.abs(touch.clientX - touchStartX);
                     const deltaY = Math.abs(touch.clientY - touchStartY);
-                    const threshold = 10;
+                    const threshold = 5;
                     
-                    if ((deltaX > threshold || deltaY > threshold) && !isTouchDragging) {
+                    if (deltaX > threshold || deltaY > threshold) {
+                        touchMoved = true;
+                    }
+                    
+                    if (touchMoved && !isTouchDragging) {
                         isTouchDragging = true;
                         draggedElement = storyRow;
                         draggedIndex = index;
                         storyRow.classList.add('dragging');
-                        e.preventDefault();
                     }
                     
                     if (isTouchDragging) {
+                        e.preventDefault();
                         const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
                         const targetRow = elementBelow?.closest('.story-row');
                         
@@ -725,10 +749,11 @@
                             targetRow.classList.add('drag-over');
                         }
                     }
-                }, false);
+                }, {passive: false});
                 
                 dragHandle.addEventListener('touchend', (e) => {
                     if (isTouchDragging) {
+                        e.preventDefault();
                         const touch = e.changedTouches[0];
                         const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
                         const targetRow = elementBelow?.closest('.story-row');
@@ -738,19 +763,31 @@
                             const draggedIdx = allRows.indexOf(draggedElement);
                             const targetIdx = allRows.indexOf(targetRow);
                             
-                            [currentOrder[draggedIdx], currentOrder[targetIdx]] = 
-                            [currentOrder[targetIdx], currentOrder[draggedIdx]];
-                            
-                            renderStories();
+                            if (draggedIdx !== -1 && targetIdx !== -1) {
+                                [currentOrder[draggedIdx], currentOrder[targetIdx]] = 
+                                [currentOrder[targetIdx], currentOrder[draggedIdx]];
+                                
+                                renderStories();
+                            }
                         }
                     }
                     
                     isTouchDragging = false;
+                    touchMoved = false;
                     draggedElement = null;
                     document.querySelectorAll('.story-row').forEach(row => {
                         row.classList.remove('drag-over', 'dragging');
                     });
-                }, false);
+                }, {passive: false});
+                
+                dragHandle.addEventListener('touchcancel', (e) => {
+                    isTouchDragging = false;
+                    touchMoved = false;
+                    draggedElement = null;
+                    document.querySelectorAll('.story-row').forEach(row => {
+                        row.classList.remove('drag-over', 'dragging');
+                    });
+                });
                 
                 storyList.appendChild(storyRow);
             });
