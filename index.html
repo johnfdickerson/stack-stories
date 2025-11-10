@@ -527,60 +527,74 @@
                     storyRow.classList.remove('drag-over');
                 });
 
-                // Touch event listeners for mobile
+                // Touch event listeners for mobile (with drag threshold)
+                let touchStartX = 0;
+                let touchStartY = 0;
+                let isTouchDragging = false;
+                
                 storyRow.addEventListener('touchstart', (e) => {
-                    draggedElement = storyRow;
-                    draggedIndex = index;
-                    storyRow.classList.add('dragging');
-                });
-
-                storyRow.addEventListener('touchend', (e) => {
-                    storyRow.classList.remove('dragging');
-                    document.querySelectorAll('.story-row').forEach(row => {
-                        row.classList.remove('drag-over');
-                    });
-                });
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                    isTouchDragging = false;
+                }, false);
 
                 storyRow.addEventListener('touchmove', (e) => {
-                    if (!draggedElement) return;
-                    e.preventDefault();
+                    if (isTouchDragging) {
+                        e.preventDefault();
+                    }
                     
                     const touch = e.touches[0];
-                    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-                    const targetRow = elementBelow?.closest('.story-row');
+                    const deltaX = Math.abs(touch.clientX - touchStartX);
+                    const deltaY = Math.abs(touch.clientY - touchStartY);
+                    const threshold = 10; // pixels before we consider it a drag
                     
-                    document.querySelectorAll('.story-row').forEach(row => {
-                        row.classList.remove('drag-over');
-                    });
-                    
-                    if (targetRow && targetRow !== storyRow) {
-                        targetRow.classList.add('drag-over');
+                    // Only start drag if moved more than threshold
+                    if ((deltaX > threshold || deltaY > threshold) && !isTouchDragging) {
+                        isTouchDragging = true;
+                        draggedElement = storyRow;
+                        draggedIndex = index;
+                        storyRow.classList.add('dragging');
+                        e.preventDefault();
                     }
-                });
+                    
+                    if (isTouchDragging) {
+                        const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                        const targetRow = elementBelow?.closest('.story-row');
+                        
+                        document.querySelectorAll('.story-row').forEach(row => {
+                            row.classList.remove('drag-over');
+                        });
+                        
+                        if (targetRow && targetRow !== storyRow) {
+                            targetRow.classList.add('drag-over');
+                        }
+                    }
+                }, false);
 
-                document.addEventListener('touchend', (e) => {
-                    if (!draggedElement) return;
-                    
-                    const touch = e.changedTouches[0];
-                    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-                    const targetRow = elementBelow?.closest('.story-row');
-                    
-                    if (targetRow && targetRow !== draggedElement) {
-                        const allRows = [...document.querySelectorAll('.story-row')];
-                        const draggedIdx = allRows.indexOf(draggedElement);
-                        const targetIdx = allRows.indexOf(targetRow);
+                storyRow.addEventListener('touchend', (e) => {
+                    if (isTouchDragging) {
+                        const touch = e.changedTouches[0];
+                        const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                        const targetRow = elementBelow?.closest('.story-row');
                         
-                        [currentOrder[draggedIdx], currentOrder[targetIdx]] = 
-                        [currentOrder[targetIdx], currentOrder[draggedIdx]];
-                        
-                        renderStories();
+                        if (targetRow && targetRow !== draggedElement) {
+                            const allRows = [...document.querySelectorAll('.story-row')];
+                            const draggedIdx = allRows.indexOf(draggedElement);
+                            const targetIdx = allRows.indexOf(targetRow);
+                            
+                            [currentOrder[draggedIdx], currentOrder[targetIdx]] = 
+                            [currentOrder[targetIdx], currentOrder[draggedIdx]];
+                            
+                            renderStories();
+                        }
                     }
                     
+                    isTouchDragging = false;
                     draggedElement = null;
                     document.querySelectorAll('.story-row').forEach(row => {
                         row.classList.remove('drag-over', 'dragging');
                     });
-                });
+                }, false);
 
                 storyList.appendChild(storyRow);
             });
