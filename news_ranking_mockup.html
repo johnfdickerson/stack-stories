@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stack Stories by John Dickerson</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .phone-frame {
+            width: 375px;
+            background: white;
+            border-radius: 40px;
+            border: 8px solid #333;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            max-height: 90vh;
+        }
+
+        .header {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .column-header-row {
+            display: grid;
+            grid-template-columns: 25px 1fr 1.2fr;
+            gap: 8px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #ddd;
+            font-weight: 600;
+            font-size: 10px;
+            background: #f9f9f9;
+            align-items: center;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .story-row {
+            display: grid;
+            grid-template-columns: 25px 1fr 1.2fr;
+            gap: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: grab;
+            border: 1px solid #e0e0e0;
+            transition: all 0.2s;
+            user-select: none;
+            align-items: start;
+        }
+
+        .story-row:active {
+            cursor: grabbing;
+        }
+
+        .story-row.serious {
+            background: white;
+        }
+
+        .story-row.joy {
+            background: #FEF3C7;
+        }
+
+        .story-row.wonder {
+            background: #EDE9FE;
+        }
+
+        .story-row.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+
+        .story-row.drag-over {
+            border-top: 3px solid #0066cc;
+        }
+
+        .rank-number {
+            font-size: 12px;
+            font-weight: bold;
+            color: #1a1a1a;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .story-title {
+            cursor: pointer;
+            user-select: text;
+        }
+
+        .story-title a {
+            color: #0066cc;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .story-title a:hover {
+            text-decoration: underline;
+        }
+
+        .reason-label {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.3;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .reason-label.expanded {
+            -webkit-line-clamp: unset;
+            overflow: visible;
+        }
+
+        .reason-more {
+            font-size: 10px;
+            color: #0066cc;
+            cursor: pointer;
+            font-weight: 500;
+            margin-top: 2px;
+            display: inline-block;
+        }
+
+        .sources-container {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .sources-container.visible {
+            display: block;
+        }
+
+        .sources-label {
+            font-size: 9px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .sources-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .source-link {
+            font-size: 9px;
+            padding: 2px 6px;
+            background: #e8f1ff;
+            color: #0066cc;
+            border-radius: 3px;
+            text-decoration: none;
+            cursor: pointer;
+            border: 1px solid #b3d9ff;
+            transition: all 0.2s;
+        }
+
+        .source-link:hover {
+            background: #0066cc;
+            color: white;
+        }
+
+        .info-text {
+            padding: 12px 16px;
+            font-size: 11px;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+
+        .footer {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            border-top: 1px solid #eee;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-vote {
+            background: #0066cc;
+            color: white;
+        }
+
+        .btn-reset {
+            background: #f0f0f0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <div class="header">
+            <h1>Stack Stories by John Dickerson</h1>
+            <p>November 9, 2025</p>
+        </div>
+
+        <div class="column-header-row">
+            <div>#</div>
+            <div>Story</div>
+            <div>Reason</div>
+        </div>
+
+        <div class="content" id="storyList">
+            <!-- Stories will be generated here -->
+        </div>
+
+        <div class="info-text">
+            Drag to reorder. Click story title to see sources.
+        </div>
+
+        <div class="footer">
+            <button class="btn-vote" onclick="submitVote()">Set My Vote</button>
+            <button class="btn-reset" onclick="resetOrder()">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        const stories = [
+            {
+                        "rank": 1,
+                        "title": "Trump admin. demands States 'Undo' SNAP Payouts.",
+                        "reason": "42 million Americans depend on SNAP. Newest test in battle between Executive and Judicial branches. Political pain of hunger increases human stakes of political fight.",
+                        "reasonExpanded": "Lower courts forced payments, saying admin's refusal \"arbitrary and capricious\" causing \"irreparable harm\". SCOTUS (Jackson) issued a temporary \"administrative stay\" - not a ruling on the merits - based on the \"separation of powers\" argument that judges can't \"dictate... how scarce federal funds should be spent\". The pause is only to let the 1st Circuit Court of Appeals rule on a longer-term stay.",
+                        "type": "serious",
+                        "newsRank": "1st",
+                        "communityRank": "1st",
+                        "sources": [
+                                    {
+                                                "outlet": "Fortune",
+                                                "url": "https://fortune.com/2025/11/09/trump-administration-demands-states-undo-full-snap-payouts/"
+                                    },
+                                    {
+                                                "outlet": "MS Free Press",
+                                                "url": "https://mississippifreepress.org/2025/11/08/trump-administration-demands-states-undo-full-snap-payouts/"
+                                    },
+                                    {
+                                                "outlet": "SFGate",
+                                                "url": "https://www.sfgate.com/news/article/trump-administration-demands-states-undo-snap-payouts-16838456.php"
+                                    }
+                        ]
+            },
+            {
+                        "rank": 2,
+                        "title": "U.S. Flight Cancellations",
+                        "reason": "Shutdown causing cancellations, straining systems. Wider population than those who receive direct benefits. 3.5 million affected; 2,500 flights cancelled.",
+                        "reasonExpanded": "Could change political dynamic. Previous shutdowns ended when travel snarls were caused.",
+                        "type": "serious",
+                        "newsRank": "2nd",
+                        "communityRank": "2nd",
+                        "sources": [
+                                    {
+                                                "outlet": "NY Post",
+                                                "url": "https://nypost.com/2025/11/09/us-airlines-cancel-more-than-2500-weekend-flights-government-shutdown/"
+                                    },
+                                    {
+                                                "outlet": "CTV News",
+                                                "url": "https://www.ctvnews.ca/2025/11/08/us-airlines-cancel-more-than-2500-weekend-flights-largely-due-to-government-shutdown-1.6184543"
+                                    },
+                                    {
+                                                "outlet": "Marca",
+                                                "url": "https://marca.com/en/lifestyle/news/2025/11/09/flight-cancellations-surge-amid-government-shutdown/"
+                                    }
+                        ]
+            },
+            {
+                        "rank": 3,
+                        "title": "Ukraine: Russian Air Attack, City Capture, Stalled U.S. Aid",
+                        "reason": "Russian launch of 450+ missiles and drones targeting two nuclear plants risks a catastrophic meltdown that poisons the continent of Europe. all Europe. Territory of Pokrovsk is slipping. U.S. shutdown cut off $5 billion in weapons so they can't effectively shoot back.",
+                        "reasonExpanded": "That 450+ barrage is a massive, coordinated strike to overwhelm air defense, killing at least seven people and causing 16-hour power cuts. Pokrovsk's loss would mean a major strategic loss; the breach of Ukraine's eastern front in the Donetsk regioN.",
+                        "type": "serious",
+                        "newsRank": "3rd",
+                        "communityRank": "3rd",
+                        "sources": [
+                                    {
+                                                "outlet": "10 News",
+                                                "url": "https://www.10news.com/2025/11/08/ukrainian-strikes-disrupt-power-heating-2-major-cities-russia/"
+                                    },
+                                    {
+                                                "outlet": "YouTube News9",
+                                                "url": "https://www.youtube.com/"
+                                    },
+                                    {
+                                                "outlet": "CTV News",
+                                                "url": "https://www.ctvnews.ca/"
+                                    }
+                        ]
+            },
+            {
+                        "rank": 4,
+                        "title": "U.S. Federal Judge Resigns: President's \"Partisan Use of Law\"",
+                        "reason": "Judges don't usually resign in this fashion. Reagan appointee diminishes charges of rank partisanship. Writing in The Atlantic, accuses Trump of \"using the law for partisan purposes.\" Protecting friends. Targeting enemies strikes at core of government functions.",
+                        "reasonExpanded": "Significant data point in ongoing battle between Trump and courts.",
+                        "type": "serious",
+                        "newsRank": "4th",
+                        "communityRank": "4th",
+                        "sources": []
+            },
+            {
+                        "rank": 5,
+                        "title": "Top Officials in 2016 Russia Probe subpoenaed.",
+                        "reason": "This escalates the Trump administration's investigation of those who investigated him. Subpoenaed: former CIA Director John Brennan, former FBI officials Peter Strzok and Lisa Page, and former Director of National Intelligence James Clapper.",
+                        "reasonExpanded": "The subpoenas are part of a stated \"retribution campaign\" against Trump's \"political adversaries\". The investigation, is pursuing a \"grand conspiracy\" theory that sources say is \"unsupported by the evidence\". This same campaign has raised concerns in the Senate about a potential indictment of Sen. Adam Schiff.",
+                        "type": "serious",
+                        "newsRank": "5th",
+                        "communityRank": "5th",
+                        "sources": []
+            },
+            {
+                        "rank": 6,
+                        "title": "13 Infants with Botulism Across 10 States; Formula Recall",
+                        "reason": "ByHeart formula poses direct threat to infants. Parents need immediate action.",
+                        "reasonExpanded": "No such thing as \"a little light botulism.\" it's a form of paralysis caused by a potent neurotoxin. Requires intensive care. Ten states is a lot. Infant botulism is very rare. when you suddenly get 13 cases across 10 states (Arizona, California, Illinois, Minnesota, New Jersey, Oregon, Pennsylvania, Rhode Island, Texas, and Washington) all linked to one product, it signals a systemic failure.",
+                        "type": "serious",
+                        "newsRank": "6th",
+                        "communityRank": "6th",
+                        "sources": []
+            },
+            {
+                        "rank": 7,
+                        "title": "White-Collar Job Market Freezes; Shutdown Blinds Analysts for Two Months",
+                        "reason": "A key economic indicator, tech hiring, is down 27% year-over-year. The 40-day shutdown has blocked the official jobs report for \"two consecutive months\", mean Federal Reserve and businesses can't plan or take measures to avoid a recession if one is coming.",
+                        "reasonExpanded": "Signal of a \"bipolar economy\": AI and Wall Street are thriving while \"a lot of the middle class is getting hit\". Businesses state they aren't hiring. Connecticut Gov. Lamont, whose state's economy is tied to the financial sector, warned these are \"the early signs of what could be a potential recession\" as laid-off \"Corporate America\" workers face a \"hellish job market\".",
+                        "type": "serious",
+                        "newsRank": "7th",
+                        "communityRank": "7th",
+                        "sources": []
+            },
+            {
+                        "rank": 8,
+                        "title": "U.S. Deports 200+ Venezuelans to El Salvador Prison; NYT Probe Alleges UN-Defined Torture",
+                        "reason": "The U.S. government is now implicated in torture. A NYT investigation found that 200+ Venezuelan men deported by the U.S. to an El Salvadoran prison were beaten and sexually assaulted by guards . An independent forensic analysis concluded these acts meet the UN's definition of torture.",
+                        "reasonExpanded": "This isn't an isolated event; it's a direct consequence of the administration's immigration policy which has taken a hard line, including: ending Temporary Protected Status for 600,000 Venezuelans , conducting a \"two-month\" immigration crackdown in cities like Chicago, and deporting undocumented immigrants \"without due process\".",
+                        "type": "serious",
+                        "newsRank": "8th",
+                        "communityRank": "8th",
+                        "sources": []
+            },
+            {
+                        "rank": 9,
+                        "title": "Hamas Returns Remains of Israeli Soldier Hadar Goldin After 11 Years",
+                        "reason": "Under U.S.-brokered peace deal, Hamas committed to returning 28 sets of remains. This brings \"bitter closure\" to an 11-year national ordeal for Israel it is also a key test of the current, rocky ceasefire.",
+                        "reasonExpanded": "Israel accuses Hamas of slow-walking for leverage, while Hamas claims delays are due to the difficulty of digging up bodies from rubble. How that dispute gets resolved will determine if peace deal holds.",
+                        "type": "serious",
+                        "newsRank": "9th",
+                        "communityRank": "9th",
+                        "sources": []
+            }
+];
+
+        let currentOrder = [...stories];
+        let draggedElement = null;
+        let draggedIndex = null;
+        let expandedStoryIndex = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderStories();
+        });
+
+        function renderStories() {
+            const storyList = document.getElementById('storyList');
+            storyList.innerHTML = '';
+
+            currentOrder.forEach((story, index) => {
+                const storyRow = document.createElement('div');
+                storyRow.className = 'story-row ' + story.type;
+                storyRow.draggable = true;
+                storyRow.id = 'story-' + index;
+
+                const rankDiv = document.createElement('div');
+                rankDiv.className = 'rank-number';
+                rankDiv.textContent = story.rank;
+
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'story-title';
+                titleDiv.style.cursor = 'pointer';
+                titleDiv.innerHTML = '<a href="#">' + escapeHtml(story.title) + '</a>';
+                titleDiv.onclick = function(e) {
+                    e.stopPropagation();
+                    toggleSources(index);
+                };
+
+                const reasonDiv = document.createElement('div');
+                const reasonLabel = document.createElement('div');
+                reasonLabel.className = 'reason-label ' + story.type;
+                reasonLabel.id = 'reason-' + index;
+                reasonLabel.textContent = story.reason;
+
+                const moreButton = document.createElement('span');
+                moreButton.className = 'reason-more';
+                moreButton.textContent = 'more';
+                moreButton.onclick = function(e) { 
+                    e.stopPropagation();
+                    toggleReason(e, index); 
+                };
+
+                reasonDiv.appendChild(reasonLabel);
+                reasonDiv.appendChild(moreButton);
+
+                // Add sources container (hidden by default)
+                const sourcesContainer = document.createElement('div');
+                sourcesContainer.className = 'sources-container';
+                sourcesContainer.id = 'sources-' + index;
+                
+                if (story.sources && story.sources.length > 0) {
+                    const sourcesLabel = document.createElement('div');
+                    sourcesLabel.className = 'sources-label';
+                    sourcesLabel.textContent = 'Sources';
+                    sourcesContainer.appendChild(sourcesLabel);
+                    
+                    const sourcesList = document.createElement('div');
+                    sourcesList.className = 'sources-list';
+                    
+                    story.sources.forEach(source => {
+                        const sourceLink = document.createElement('a');
+                        sourceLink.className = 'source-link';
+                        sourceLink.textContent = source.outlet;
+                        sourceLink.href = source.url;
+                        sourceLink.target = '_blank';
+                        sourceLink.rel = 'noopener noreferrer';
+                        sourceLink.onclick = function(e) {
+                            e.stopPropagation();
+                        };
+                        sourcesList.appendChild(sourceLink);
+                    });
+                    
+                    sourcesContainer.appendChild(sourcesList);
+                }
+
+                reasonDiv.appendChild(sourcesContainer);
+
+                storyRow.appendChild(rankDiv);
+                storyRow.appendChild(titleDiv);
+                storyRow.appendChild(reasonDiv);
+
+                // Drag event listeners
+                storyRow.addEventListener('dragstart', (e) => {
+                    draggedElement = storyRow;
+                    draggedIndex = index;
+                    setTimeout(() => storyRow.classList.add('dragging'), 0);
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                storyRow.addEventListener('dragend', (e) => {
+                    storyRow.classList.remove('dragging');
+                    document.querySelectorAll('.story-row').forEach(row => {
+                        row.classList.remove('drag-over');
+                    });
+                });
+
+                storyRow.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (draggedElement && draggedElement !== storyRow) {
+                        storyRow.classList.add('drag-over');
+                    }
+                });
+
+                storyRow.addEventListener('dragleave', (e) => {
+                    storyRow.classList.remove('drag-over');
+                });
+
+                storyRow.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (draggedElement && draggedElement !== storyRow) {
+                        const allRows = [...document.querySelectorAll('.story-row')];
+                        const draggedIdx = allRows.indexOf(draggedElement);
+                        const targetIdx = allRows.indexOf(storyRow);
+                        
+                        [currentOrder[draggedIdx], currentOrder[targetIdx]] = 
+                        [currentOrder[targetIdx], currentOrder[draggedIdx]];
+                        
+                        renderStories();
+                    }
+                    storyRow.classList.remove('drag-over');
+                });
+
+                storyList.appendChild(storyRow);
+            });
+        }
+
+        function toggleSources(index) {
+            const sourcesContainer = document.getElementById('sources-' + index);
+            if (sourcesContainer) {
+                sourcesContainer.classList.toggle('visible');
+            }
+        }
+
+        function toggleReason(event, index) {
+            event.stopPropagation();
+            const reasonLabel = document.getElementById('reason-' + index);
+            const moreButton = event.target;
+
+            if (reasonLabel.classList.contains('expanded')) {
+                reasonLabel.classList.remove('expanded');
+                reasonLabel.textContent = stories.find(s => s.rank === currentOrder[index].rank).reason;
+                moreButton.textContent = 'more';
+            } else {
+                reasonLabel.classList.add('expanded');
+                const storyData = stories.find(s => s.rank === currentOrder[index].rank);
+                const combinedText = storyData.reason + '\n\n' + storyData.reasonExpanded;
+                reasonLabel.textContent = combinedText;
+                moreButton.textContent = 'less';
+            }
+        }
+
+        function submitVote() {
+            const ranking = currentOrder.map(s => s.rank).join(', ');
+            alert('Your ranking: ' + ranking);
+        }
+
+        function resetOrder() {
+            currentOrder = [...stories];
+            renderStories();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
