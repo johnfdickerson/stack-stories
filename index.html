@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stack Stories by John Dickerson</title>
+    <title>Stack Stories 2.0 by John Dickerson</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f5f5;
@@ -20,7 +19,6 @@
             align-items: flex-start;
             min-height: 100vh;
         }
-
         .phone-frame {
             width: 375px;
             background: white;
@@ -33,23 +31,19 @@
             position: relative;
             max-height: 90vh;
         }
-
         .header {
             padding: 16px;
             border-bottom: 1px solid #eee;
             text-align: center;
         }
-
         .header h1 {
             font-size: 18px;
             margin-bottom: 4px;
         }
-
         .header p {
             font-size: 12px;
             color: #666;
         }
-
         .column-header-row {
             display: grid;
             grid-template-columns: 25px 1fr 1.2fr;
@@ -61,13 +55,11 @@
             background: #f9f9f9;
             align-items: center;
         }
-
         .content {
             flex: 1;
             overflow-y: auto;
             padding: 12px;
         }
-
         .story-row {
             display: grid;
             grid-template-columns: 25px 1fr 1.2fr;
@@ -81,45 +73,41 @@
             user-select: none;
             align-items: start;
         }
-
         .story-row:active {
             cursor: grabbing;
         }
-
         .story-row.serious {
             background: white;
         }
-
         .story-row.joy {
             background: #FEF3C7;
         }
-
         .story-row.wonder {
             background: #EDE9FE;
         }
-
         .story-row.dragging {
             opacity: 0.5;
             transform: scale(0.95);
         }
-
         .story-row.drag-over {
             border-top: 3px solid #0066cc;
         }
-
         .rank-number {
             font-size: 12px;
             font-weight: bold;
             color: #1a1a1a;
             text-align: center;
             line-height: 1.2;
+            cursor: pointer;
+            user-select: text;
         }
-
+        .rank-number.revealed {
+            font-size: 10px;
+        }
         .story-title {
             cursor: pointer;
             user-select: text;
         }
-
         .story-title a {
             color: #0066cc;
             text-decoration: none;
@@ -127,11 +115,9 @@
             font-weight: 600;
             line-height: 1.2;
         }
-
         .story-title a:hover {
             text-decoration: underline;
         }
-
         .reason-label {
             font-size: 11px;
             color: #666;
@@ -142,12 +128,10 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
-
         .reason-label.expanded {
             -webkit-line-clamp: unset;
             overflow: visible;
         }
-
         .reason-more {
             font-size: 10px;
             color: #0066cc;
@@ -156,18 +140,15 @@
             margin-top: 2px;
             display: inline-block;
         }
-
         .sources-container {
             margin-top: 8px;
             padding-top: 8px;
             border-top: 1px solid rgba(0, 0, 0, 0.1);
             display: none;
         }
-
         .sources-container.visible {
             display: block;
         }
-
         .sources-label {
             font-size: 9px;
             font-weight: 600;
@@ -176,13 +157,11 @@
             letter-spacing: 0.5px;
             margin-bottom: 4px;
         }
-
         .sources-list {
             display: flex;
             flex-wrap: wrap;
             gap: 4px;
         }
-
         .source-link {
             font-size: 9px;
             padding: 2px 6px;
@@ -194,26 +173,24 @@
             border: 1px solid #b3d9ff;
             transition: all 0.2s;
         }
-
         .source-link:hover {
             background: #0066cc;
             color: white;
         }
-
         .info-text {
             padding: 12px 16px;
             font-size: 11px;
             color: #666;
             border-top: 1px solid #eee;
+            min-height: 40px;
         }
-
         .footer {
             display: flex;
             gap: 8px;
             padding: 12px 16px;
             border-top: 1px solid #eee;
+            flex-wrap: wrap;
         }
-
         button {
             flex: 1;
             padding: 10px;
@@ -223,48 +200,61 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            min-width: 100px;
         }
-
         .btn-vote {
             background: #0066cc;
             color: white;
         }
-
+        .btn-vote:hover {
+            background: #0052a3;
+        }
         .btn-reset {
             background: #f0f0f0;
             color: #333;
+        }
+        .btn-reset:hover {
+            background: #e0e0e0;
+        }
+        .btn-compare {
+            background: #10b981;
+            color: white;
+            flex: 2;
+        }
+        .btn-compare:hover {
+            background: #059669;
+        }
+        .btn-compare:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
     <div class="phone-frame">
         <div class="header">
-            <h1>Stack Stories by John Dickerson</h1>
-            <p>November 9, 2025</p>
+            <h1>Stack Stories 2.0</h1>
+            <p>by John Dickerson</p>
+            <p style="font-size: 11px; margin-top: 4px;">November 9, 2025</p>
         </div>
-
         <div class="column-header-row">
             <div>#</div>
             <div>Story</div>
             <div>Reason</div>
         </div>
-
         <div class="content" id="storyList">
             <!-- Stories will be generated here -->
         </div>
-
-        <div class="info-text">
+        <div class="info-text" id="infoText">
             What are today's most important stories? Drag to reorder. Distribute respite stories. Click story title to toggle sources.
         </div>
-
         <div class="footer">
-            <button class="btn-vote" onclick="submitVote()">Set My Vote</button>
             <button class="btn-reset" onclick="resetOrder()">Reset</button>
+            <button class="btn-compare" onclick="compareRankings()">Compare to JD</button>
         </div>
     </div>
-
     <script>
-        const stories = [
+        const originalStories = [
             {
                         "rank": 1,
                         "title": "Trump demands States 'Undo' SNAP Payouts.",
@@ -415,30 +405,42 @@
                         "sources": []
             }
 ];
-
-                let currentOrder = [...stories];
+        const stories = JSON.parse(JSON.stringify(originalStories));
+        
+        // Shuffle function using Fisher-Yates algorithm
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+        
+        // Start with scrambled order and save it for reset
+        let initialScrambledOrder = shuffleArray(stories);
+        let currentOrder = [...initialScrambledOrder];
         let draggedElement = null;
         let draggedIndex = null;
-        let expandedStoryIndex = null;
-
+        let rankingsRevealed = false;
+        
         window.addEventListener('DOMContentLoaded', () => {
             renderStories();
         });
-
         function renderStories() {
             const storyList = document.getElementById('storyList');
             storyList.innerHTML = '';
-
             currentOrder.forEach((story, index) => {
                 const storyRow = document.createElement('div');
                 storyRow.className = 'story-row ' + story.type;
                 storyRow.draggable = true;
                 storyRow.id = 'story-' + index;
-
                 const rankDiv = document.createElement('div');
                 rankDiv.className = 'rank-number';
-                rankDiv.textContent = story.rank;
-
+                rankDiv.id = 'rank-display-' + index;
+                rankDiv.textContent = (index + 1);
+                rankDiv.title = 'Click to see original ranking';
+                storyRow.appendChild(rankDiv);
                 const titleDiv = document.createElement('div');
                 titleDiv.className = 'story-title';
                 titleDiv.style.cursor = 'pointer';
@@ -447,13 +449,12 @@
                     e.stopPropagation();
                     toggleSources(index);
                 };
-
+                storyRow.appendChild(titleDiv);
                 const reasonDiv = document.createElement('div');
                 const reasonLabel = document.createElement('div');
                 reasonLabel.className = 'reason-label ' + story.type;
                 reasonLabel.id = 'reason-' + index;
                 reasonLabel.textContent = story.reason;
-
                 const moreButton = document.createElement('span');
                 moreButton.className = 'reason-more';
                 moreButton.textContent = 'more';
@@ -461,10 +462,8 @@
                     e.stopPropagation();
                     toggleReason(e, index); 
                 };
-
                 reasonDiv.appendChild(reasonLabel);
                 reasonDiv.appendChild(moreButton);
-
                 // Add sources container (hidden by default)
                 const sourcesContainer = document.createElement('div');
                 sourcesContainer.className = 'sources-container';
@@ -494,13 +493,8 @@
                     
                     sourcesContainer.appendChild(sourcesList);
                 }
-
                 reasonDiv.appendChild(sourcesContainer);
-
-                storyRow.appendChild(rankDiv);
-                storyRow.appendChild(titleDiv);
                 storyRow.appendChild(reasonDiv);
-
                 // Drag event listeners (desktop & mobile)
                 storyRow.addEventListener('dragstart', (e) => {
                     draggedElement = storyRow;
@@ -510,14 +504,12 @@
                         e.dataTransfer.effectAllowed = 'move';
                     }
                 });
-
                 storyRow.addEventListener('dragend', (e) => {
                     storyRow.classList.remove('dragging');
                     document.querySelectorAll('.story-row').forEach(row => {
                         row.classList.remove('drag-over');
                     });
                 });
-
                 storyRow.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     if (e.dataTransfer) {
@@ -527,11 +519,9 @@
                         storyRow.classList.add('drag-over');
                     }
                 });
-
                 storyRow.addEventListener('dragleave', (e) => {
                     storyRow.classList.remove('drag-over');
                 });
-
                 storyRow.addEventListener('drop', (e) => {
                     e.preventDefault();
                     if (draggedElement && draggedElement !== storyRow) {
@@ -546,7 +536,6 @@
                     }
                     storyRow.classList.remove('drag-over');
                 });
-
                 // Touch event listeners for mobile (with drag threshold)
                 let touchStartX = 0;
                 let touchStartY = 0;
@@ -557,7 +546,6 @@
                     touchStartY = e.touches[0].clientY;
                     isTouchDragging = false;
                 }, false);
-
                 storyRow.addEventListener('touchmove', (e) => {
                     if (isTouchDragging) {
                         e.preventDefault();
@@ -566,9 +554,8 @@
                     const touch = e.touches[0];
                     const deltaX = Math.abs(touch.clientX - touchStartX);
                     const deltaY = Math.abs(touch.clientY - touchStartY);
-                    const threshold = 10; // pixels before we consider it a drag
+                    const threshold = 10;
                     
-                    // Only start drag if moved more than threshold
                     if ((deltaX > threshold || deltaY > threshold) && !isTouchDragging) {
                         isTouchDragging = true;
                         draggedElement = storyRow;
@@ -590,7 +577,6 @@
                         }
                     }
                 }, false);
-
                 storyRow.addEventListener('touchend', (e) => {
                     if (isTouchDragging) {
                         const touch = e.changedTouches[0];
@@ -615,23 +601,19 @@
                         row.classList.remove('drag-over', 'dragging');
                     });
                 }, false);
-
                 storyList.appendChild(storyRow);
             });
         }
-
         function toggleSources(index) {
             const sourcesContainer = document.getElementById('sources-' + index);
             if (sourcesContainer) {
                 sourcesContainer.classList.toggle('visible');
             }
         }
-
         function toggleReason(event, index) {
             event.stopPropagation();
             const reasonLabel = document.getElementById('reason-' + index);
             const moreButton = event.target;
-
             if (reasonLabel.classList.contains('expanded')) {
                 reasonLabel.classList.remove('expanded');
                 reasonLabel.textContent = stories.find(s => s.rank === currentOrder[index].rank).reason;
@@ -644,17 +626,34 @@
                 moreButton.textContent = 'less';
             }
         }
-
-        function submitVote() {
-            const ranking = currentOrder.map(s => s.rank).join(', ');
-            alert('Your ranking: ' + ranking);
+        function compareRankings() {
+            rankingsRevealed = !rankingsRevealed;
+            
+            currentOrder.forEach((story, userIndex) => {
+                const rankDisplay = document.getElementById('rank-display-' + userIndex);
+                const userRank = userIndex + 1;
+                const jdRank = story.rank;
+                
+                if (rankingsRevealed) {
+                    rankDisplay.classList.add('revealed');
+                    rankDisplay.textContent = userRank + ' / JD:' + jdRank;
+                    rankDisplay.title = 'Your rank / JD\'s rank';
+                } else {
+                    rankDisplay.classList.remove('revealed');
+                    rankDisplay.textContent = userRank;
+                    rankDisplay.title = 'Click to see original ranking';
+                }
+            });
+            // Toggle button text
+            const compareBtn = event.target;
+            compareBtn.textContent = rankingsRevealed ? 'Hide JD Ranking' : 'Compare to JD';
         }
-
         function resetOrder() {
-            currentOrder = [...stories];
+            currentOrder = JSON.parse(JSON.stringify(originalStories));
+            rankingsRevealed = false;
+            document.querySelector('.btn-compare').textContent = 'Compare to JD';
             renderStories();
         }
-
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
