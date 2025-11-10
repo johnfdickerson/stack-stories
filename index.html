@@ -46,7 +46,7 @@
         }
         .column-header-row {
             display: grid;
-            grid-template-columns: 25px 1fr 1.2fr;
+            grid-template-columns: 25px 1fr 30px 1.2fr;
             gap: 8px;
             padding: 12px 16px;
             border-bottom: 1px solid #ddd;
@@ -62,19 +62,19 @@
         }
         .story-row {
             display: grid;
-            grid-template-columns: 25px 1fr 1.2fr;
+            grid-template-columns: 25px 1fr 30px 1.2fr;
             gap: 8px;
             padding: 12px;
             margin-bottom: 8px;
             border-radius: 8px;
-            cursor: grab;
+            cursor: default;
             border: 1px solid #e0e0e0;
             transition: all 0.2s;
             user-select: none;
             align-items: start;
         }
         .story-row:active {
-            cursor: grabbing;
+            cursor: default;
         }
         .story-row.serious {
             background: white;
@@ -103,6 +103,29 @@
         }
         .rank-number.revealed {
             font-size: 10px;
+        }
+        .drag-handle {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            padding: 8px 4px;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        .drag-handle:hover {
+            opacity: 0.8;
+        }
+        .drag-handle-line {
+            width: 20px;
+            height: 2px;
+            background: #666;
+            margin: 2px 0;
+            border-radius: 1px;
         }
         .story-title {
             cursor: pointer;
@@ -228,6 +251,70 @@
             background: #ccc;
             cursor: not-allowed;
         }
+        .number-picker-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .number-picker-overlay.active {
+            display: flex;
+        }
+        .number-picker {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .number-picker h3 {
+            font-size: 16px;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        .number-wheel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-width: 280px;
+            margin-bottom: 16px;
+        }
+        .number-option {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .number-option:hover {
+            background: #e0e0e0;
+            border-color: #0066cc;
+        }
+        .number-option.current {
+            background: #0066cc;
+            color: white;
+            border-color: #0066cc;
+        }
+        .picker-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .picker-buttons button {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -240,19 +327,33 @@
         <div class="column-header-row">
             <div>#</div>
             <div>Story</div>
+            <div></div>
             <div>Reason</div>
         </div>
         <div class="content" id="storyList">
             <!-- Stories will be generated here -->
         </div>
         <div class="info-text" id="infoText">
-            What are today's most important stories? Drag to reorder. Distribute respite stories. Click story title to toggle sources.
+            Stories are scrambled. Drag to rank by importance. Distribute respite stories. Click story title to toggle sources.
         </div>
         <div class="footer">
-            <button class="btn-reset" onclick="resetOrder()">Reset</button>
+            <button class="btn-reset" onclick="resetOrder()" title="Return to original scrambled order">Reset</button>
             <button class="btn-compare" onclick="compareRankings()">Compare to JD</button>
         </div>
     </div>
+    
+    <div class="number-picker-overlay" id="numberPickerOverlay" onclick="if(event.target === this) closeNumberPicker()">
+        <div class="number-picker">
+            <h3>Select Rank</h3>
+            <div class="number-wheel" id="numberWheel">
+                <!-- Numbers 1-11 will be generated here -->
+            </div>
+            <div class="picker-buttons">
+                <button class="btn-reset" onclick="closeNumberPicker()">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
         const originalStories = [
             {
@@ -423,9 +524,12 @@
         let draggedElement = null;
         let draggedIndex = null;
         let rankingsRevealed = false;
+        let longPressTimer = null;
+        let currentPickerIndex = null;
         
         window.addEventListener('DOMContentLoaded', () => {
             renderStories();
+            initNumberPicker();
         });
         function renderStories() {
             const storyList = document.getElementById('storyList');
@@ -433,14 +537,42 @@
             currentOrder.forEach((story, index) => {
                 const storyRow = document.createElement('div');
                 storyRow.className = 'story-row ' + story.type;
-                storyRow.draggable = true;
                 storyRow.id = 'story-' + index;
+                
+                // Rank number with long-press
                 const rankDiv = document.createElement('div');
                 rankDiv.className = 'rank-number';
                 rankDiv.id = 'rank-display-' + index;
                 rankDiv.textContent = (index + 1);
-                rankDiv.title = 'Click to see original ranking';
+                rankDiv.title = 'Long press to select rank';
+                
+                // Long press functionality
+                let longPressTimer = null;
+                rankDiv.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    longPressTimer = setTimeout(() => {
+                        openNumberPicker(index);
+                    }, 500);
+                });
+                rankDiv.addEventListener('mouseup', () => {
+                    clearTimeout(longPressTimer);
+                });
+                rankDiv.addEventListener('mouseleave', () => {
+                    clearTimeout(longPressTimer);
+                });
+                rankDiv.addEventListener('touchstart', (e) => {
+                    e.stopPropagation();
+                    longPressTimer = setTimeout(() => {
+                        openNumberPicker(index);
+                    }, 500);
+                });
+                rankDiv.addEventListener('touchend', () => {
+                    clearTimeout(longPressTimer);
+                });
+                
                 storyRow.appendChild(rankDiv);
+                
+                // Story title
                 const titleDiv = document.createElement('div');
                 titleDiv.className = 'story-title';
                 titleDiv.style.cursor = 'pointer';
@@ -450,6 +582,14 @@
                     toggleSources(index);
                 };
                 storyRow.appendChild(titleDiv);
+                
+                // Drag handle
+                const dragHandle = document.createElement('div');
+                dragHandle.className = 'drag-handle';
+                dragHandle.innerHTML = '<div class="drag-handle-line"></div><div class="drag-handle-line"></div><div class="drag-handle-line"></div>';
+                storyRow.appendChild(dragHandle);
+                
+                // Reason section
                 const reasonDiv = document.createElement('div');
                 const reasonLabel = document.createElement('div');
                 reasonLabel.className = 'reason-label ' + story.type;
@@ -464,7 +604,8 @@
                 };
                 reasonDiv.appendChild(reasonLabel);
                 reasonDiv.appendChild(moreButton);
-                // Add sources container (hidden by default)
+                
+                // Sources container
                 const sourcesContainer = document.createElement('div');
                 sourcesContainer.className = 'sources-container';
                 sourcesContainer.id = 'sources-' + index;
@@ -495,8 +636,10 @@
                 }
                 reasonDiv.appendChild(sourcesContainer);
                 storyRow.appendChild(reasonDiv);
-                // Drag event listeners (desktop & mobile)
-                storyRow.addEventListener('dragstart', (e) => {
+                
+                // Drag events - ONLY on drag handle for desktop
+                dragHandle.draggable = true;
+                dragHandle.addEventListener('dragstart', (e) => {
                     draggedElement = storyRow;
                     draggedIndex = index;
                     setTimeout(() => storyRow.classList.add('dragging'), 0);
@@ -504,12 +647,14 @@
                         e.dataTransfer.effectAllowed = 'move';
                     }
                 });
+                
                 storyRow.addEventListener('dragend', (e) => {
                     storyRow.classList.remove('dragging');
                     document.querySelectorAll('.story-row').forEach(row => {
                         row.classList.remove('drag-over');
                     });
                 });
+                
                 storyRow.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     if (e.dataTransfer) {
@@ -519,9 +664,11 @@
                         storyRow.classList.add('drag-over');
                     }
                 });
+                
                 storyRow.addEventListener('dragleave', (e) => {
                     storyRow.classList.remove('drag-over');
                 });
+                
                 storyRow.addEventListener('drop', (e) => {
                     e.preventDefault();
                     if (draggedElement && draggedElement !== storyRow) {
@@ -536,17 +683,19 @@
                     }
                     storyRow.classList.remove('drag-over');
                 });
-                // Touch event listeners for mobile (with drag threshold)
+                
+                // Touch events - ONLY on drag handle for mobile
                 let touchStartX = 0;
                 let touchStartY = 0;
                 let isTouchDragging = false;
                 
-                storyRow.addEventListener('touchstart', (e) => {
+                dragHandle.addEventListener('touchstart', (e) => {
                     touchStartX = e.touches[0].clientX;
                     touchStartY = e.touches[0].clientY;
                     isTouchDragging = false;
                 }, false);
-                storyRow.addEventListener('touchmove', (e) => {
+                
+                dragHandle.addEventListener('touchmove', (e) => {
                     if (isTouchDragging) {
                         e.preventDefault();
                     }
@@ -577,7 +726,8 @@
                         }
                     }
                 }, false);
-                storyRow.addEventListener('touchend', (e) => {
+                
+                dragHandle.addEventListener('touchend', (e) => {
                     if (isTouchDragging) {
                         const touch = e.changedTouches[0];
                         const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -601,6 +751,7 @@
                         row.classList.remove('drag-over', 'dragging');
                     });
                 }, false);
+                
                 storyList.appendChild(storyRow);
             });
         }
@@ -649,7 +800,7 @@
             compareBtn.textContent = rankingsRevealed ? 'Hide JD Ranking' : 'Compare to JD';
         }
         function resetOrder() {
-            currentOrder = JSON.parse(JSON.stringify(originalStories));
+            currentOrder = JSON.parse(JSON.stringify(initialScrambledOrder));
             rankingsRevealed = false;
             document.querySelector('.btn-compare').textContent = 'Compare to JD';
             renderStories();
@@ -658,6 +809,55 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        function initNumberPicker() {
+            const numberWheel = document.getElementById('numberWheel');
+            for (let i = 1; i <= 11; i++) {
+                const numOption = document.createElement('div');
+                numOption.className = 'number-option';
+                numOption.textContent = i;
+                numOption.onclick = () => selectRank(i);
+                numberWheel.appendChild(numOption);
+            }
+        }
+        
+        function openNumberPicker(index) {
+            currentPickerIndex = index;
+            const overlay = document.getElementById('numberPickerOverlay');
+            overlay.classList.add('active');
+            
+            // Highlight current position
+            const currentRank = index + 1;
+            document.querySelectorAll('.number-option').forEach((opt, i) => {
+                if (i + 1 === currentRank) {
+                    opt.classList.add('current');
+                } else {
+                    opt.classList.remove('current');
+                }
+            });
+        }
+        
+        function closeNumberPicker() {
+            document.getElementById('numberPickerOverlay').classList.remove('active');
+            currentPickerIndex = null;
+        }
+        
+        function selectRank(newRank) {
+            if (currentPickerIndex === null) return;
+            
+            const oldIndex = currentPickerIndex;
+            const newIndex = newRank - 1;
+            
+            if (oldIndex !== newIndex) {
+                // Remove item from old position
+                const item = currentOrder.splice(oldIndex, 1)[0];
+                // Insert at new position
+                currentOrder.splice(newIndex, 0, item);
+                renderStories();
+            }
+            
+            closeNumberPicker();
         }
     </script>
 </body>
