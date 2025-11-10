@@ -254,7 +254,7 @@
         </div>
 
         <div class="info-text">
-            What are today's most important stories? Drag to reorder. Click story title to see sources.
+            What are today's most important stories? Drag to reorder. Click story title to toggle sources.
         </div>
 
         <div class="footer">
@@ -481,12 +481,14 @@
                 storyRow.appendChild(titleDiv);
                 storyRow.appendChild(reasonDiv);
 
-                // Drag event listeners
+                // Drag event listeners (desktop & mobile)
                 storyRow.addEventListener('dragstart', (e) => {
                     draggedElement = storyRow;
                     draggedIndex = index;
                     setTimeout(() => storyRow.classList.add('dragging'), 0);
-                    e.dataTransfer.effectAllowed = 'move';
+                    if (e.dataTransfer) {
+                        e.dataTransfer.effectAllowed = 'move';
+                    }
                 });
 
                 storyRow.addEventListener('dragend', (e) => {
@@ -498,7 +500,9 @@
 
                 storyRow.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
+                    if (e.dataTransfer) {
+                        e.dataTransfer.dropEffect = 'move';
+                    }
                     if (draggedElement && draggedElement !== storyRow) {
                         storyRow.classList.add('drag-over');
                     }
@@ -521,6 +525,61 @@
                         renderStories();
                     }
                     storyRow.classList.remove('drag-over');
+                });
+
+                // Touch event listeners for mobile
+                storyRow.addEventListener('touchstart', (e) => {
+                    draggedElement = storyRow;
+                    draggedIndex = index;
+                    storyRow.classList.add('dragging');
+                });
+
+                storyRow.addEventListener('touchend', (e) => {
+                    storyRow.classList.remove('dragging');
+                    document.querySelectorAll('.story-row').forEach(row => {
+                        row.classList.remove('drag-over');
+                    });
+                });
+
+                storyRow.addEventListener('touchmove', (e) => {
+                    if (!draggedElement) return;
+                    e.preventDefault();
+                    
+                    const touch = e.touches[0];
+                    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                    const targetRow = elementBelow?.closest('.story-row');
+                    
+                    document.querySelectorAll('.story-row').forEach(row => {
+                        row.classList.remove('drag-over');
+                    });
+                    
+                    if (targetRow && targetRow !== storyRow) {
+                        targetRow.classList.add('drag-over');
+                    }
+                });
+
+                document.addEventListener('touchend', (e) => {
+                    if (!draggedElement) return;
+                    
+                    const touch = e.changedTouches[0];
+                    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                    const targetRow = elementBelow?.closest('.story-row');
+                    
+                    if (targetRow && targetRow !== draggedElement) {
+                        const allRows = [...document.querySelectorAll('.story-row')];
+                        const draggedIdx = allRows.indexOf(draggedElement);
+                        const targetIdx = allRows.indexOf(targetRow);
+                        
+                        [currentOrder[draggedIdx], currentOrder[targetIdx]] = 
+                        [currentOrder[targetIdx], currentOrder[draggedIdx]];
+                        
+                        renderStories();
+                    }
+                    
+                    draggedElement = null;
+                    document.querySelectorAll('.story-row').forEach(row => {
+                        row.classList.remove('drag-over', 'dragging');
+                    });
                 });
 
                 storyList.appendChild(storyRow);
