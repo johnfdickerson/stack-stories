@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stack Stories 2.0 by John Dickerson</title>
+    <title>Stack Stories 3.0 by John Dickerson</title>
     <style>
         * {
             margin: 0;
@@ -46,8 +46,8 @@
         }
         .column-header-row {
             display: grid;
-            grid-template-columns: 25px 1fr 30px 1.2fr;
-            gap: 8px;
+            grid-template-columns: 35px 1fr;
+            gap: 12px;
             padding: 12px 16px;
             border-bottom: 1px solid #ddd;
             font-weight: 600;
@@ -58,23 +58,23 @@
         .content {
             flex: 1;
             overflow-y: auto;
-            padding: 12px;
+            padding: 8px 12px;
         }
         .story-row {
             display: grid;
-            grid-template-columns: 25px 1fr 30px 1.2fr;
-            gap: 8px;
+            grid-template-columns: 35px 1fr;
+            gap: 12px;
             padding: 12px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             border-radius: 8px;
-            cursor: default;
             border: 1px solid #e0e0e0;
             transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
             user-select: none;
             align-items: start;
+            cursor: grab;
         }
         .story-row:active {
-            cursor: default;
+            cursor: grabbing;
         }
         .story-row.serious {
             background: white;
@@ -93,85 +93,63 @@
             border-top: 3px solid #0066cc;
         }
         .rank-number {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
             color: #1a1a1a;
             text-align: center;
             line-height: 1.2;
             cursor: pointer;
             user-select: text;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+            touch-action: none;
+            pointer-events: auto;
+        }
+        .rank-number:active {
+            background: #e0e0e0;
+            transform: scale(1.1);
         }
         .rank-number.revealed {
             font-size: 10px;
         }
-        .drag-handle {
+        .story-content {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: grab;
-            padding: 8px 8px;
-            opacity: 0.6;
-            transition: opacity 0.15s ease;
-            touch-action: none;
-            min-width: 30px;
+            flex-direction: column;
+            gap: 4px;
         }
-        .drag-handle:active {
-            cursor: grabbing;
-            opacity: 1;
-        }
-        .drag-handle:hover {
-            opacity: 0.8;
-        }
-        .drag-handle-line {
-            width: 4px;
-            height: 35px;
-            background: #555;
-            border-radius: 2px;
-            transition: all 0.15s ease;
-        }
-        .drag-handle.active,
-        .drag-handle:active {
-            opacity: 1;
-        }
-        .drag-handle.active .drag-handle-line,
-        .drag-handle:active .drag-handle-line {
-            background: #0066cc;
-            width: 5px;
-        }
-        .story-row.dragging .drag-handle {
-            opacity: 1;
-        }
-        .story-row.dragging .drag-handle-line {
-            background: #0066cc;
-            width: 5px;
+        .story-title-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
         }
         .story-title {
-            cursor: pointer;
-            user-select: text;
-        }
-        .story-title a {
-            color: #0066cc;
-            text-decoration: none;
-            font-size: 12px;
+            flex: 1;
+            font-size: 13px;
             font-weight: 600;
-            line-height: 1.2;
+            line-height: 1.3;
+            color: #1a1a1a;
         }
-        .story-title a:hover {
+        .more-button {
+            font-size: 11px;
+            color: #0066cc;
+            cursor: pointer;
+            font-weight: 500;
+            white-space: nowrap;
+            user-select: none;
+            pointer-events: auto;
+        }
+        .more-button:hover {
             text-decoration: underline;
         }
-        .reason-label {
-            font-size: 11px;
-            color: #666;
-            line-height: 1.3;
-            word-break: break-word;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+        .expanded-content {
+            display: none;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
         }
-        .reason-label.expanded {
-            -webkit-line-clamp: unset;
-            overflow: visible;
+        .expanded-content.visible {
+            display: block;
         }
         .story-type-tag {
             display: inline-block;
@@ -180,6 +158,7 @@
             padding: 2px 6px;
             border-radius: 3px;
             margin-right: 6px;
+            margin-bottom: 4px;
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
@@ -191,22 +170,20 @@
             background: #a78bfa;
             color: #4c1d95;
         }
-        .reason-more {
-            font-size: 10px;
-            color: #0066cc;
-            cursor: pointer;
-            font-weight: 500;
-            margin-top: 2px;
-            display: inline-block;
+        .reason-text {
+            font-size: 11px;
+            color: #444;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+        .expanded-reason-text {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.4;
+            margin-bottom: 8px;
         }
         .sources-container {
             margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
-            display: none;
-        }
-        .sources-container.visible {
-            display: block;
         }
         .sources-label {
             font-size: 9px;
@@ -260,13 +237,6 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-vote {
-            background: #0066cc;
-            color: white;
-        }
-        .btn-vote:hover {
-            background: #0052a3;
-        }
         .btn-reset {
             background: #f0f0f0;
             color: #333;
@@ -294,10 +264,6 @@
         }
         .btn-compare:hover {
             background: #059669;
-        }
-        .btn-compare:disabled {
-            background: #ccc;
-            cursor: not-allowed;
         }
         .number-picker-overlay {
             display: none;
@@ -368,21 +334,19 @@
 <body>
     <div class="phone-frame">
         <div class="header">
-            <h1>Stack Stories 2.0</h1>
+            <h1>Stack Stories 3.0</h1>
             <p>by John Dickerson</p>
             <p style="font-size: 11px; margin-top: 4px;">November 9, 2025</p>
         </div>
         <div class="column-header-row">
             <div>#</div>
             <div>Story</div>
-            <div></div>
-            <div>Reason</div>
         </div>
         <div class="content" id="storyList">
             <!-- Stories will be generated here -->
         </div>
         <div class="info-text" id="infoText">
-            Rank today's news by importance: Hold & drag | to reorder • Click # to jump • Tap title for sources • Compare to see JD's ranking
+            Rank today's news: Drag story to reorder • Click # to jump • Click "more" for details
         </div>
         <div class="footer">
             <button class="btn-reset" onclick="resetOrder()">Reset</button>
@@ -653,6 +617,7 @@
             renderStories();
             initNumberPicker();
         });
+        
         function renderStories() {
             const storyList = document.getElementById('storyList');
             storyList.innerHTML = '';
@@ -661,72 +626,85 @@
                 storyRow.className = 'story-row ' + story.type;
                 storyRow.id = 'story-' + index;
                 
-                // Rank number with long-press
+                // Rank number (clickable for number picker)
                 const rankDiv = document.createElement('div');
                 rankDiv.className = 'rank-number';
                 rankDiv.id = 'rank-display-' + index;
                 rankDiv.textContent = (index + 1);
-                rankDiv.title = 'Click to select rank';
+                rankDiv.title = 'Click to jump';
                 
-                // Click/tap to open number picker
+                // Click to open number picker
                 rankDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
                     openNumberPicker(index);
                 });
+                rankDiv.addEventListener('dragstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
                 
                 storyRow.appendChild(rankDiv);
                 
-                // Story title
+                // Story content area
+                const storyContent = document.createElement('div');
+                storyContent.className = 'story-content';
+                
+                // Title row with "more" button
+                const titleRow = document.createElement('div');
+                titleRow.className = 'story-title-row';
+                
                 const titleDiv = document.createElement('div');
                 titleDiv.className = 'story-title';
-                titleDiv.style.cursor = 'pointer';
-                titleDiv.innerHTML = '<a href="#">' + escapeHtml(story.title) + '</a>';
-                titleDiv.onclick = function(e) {
+                titleDiv.textContent = story.title;
+                
+                const moreButton = document.createElement('span');
+                moreButton.className = 'more-button';
+                moreButton.textContent = 'more';
+                moreButton.onclick = function(e) {
                     e.stopPropagation();
-                    toggleSources(index);
+                    toggleExpanded(index);
                 };
-                storyRow.appendChild(titleDiv);
+                moreButton.ondragstart = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                };
                 
-                // Drag handle
-                const dragHandle = document.createElement('div');
-                dragHandle.className = 'drag-handle';
-                dragHandle.innerHTML = '<div class="drag-handle-line"></div>';
-                storyRow.appendChild(dragHandle);
+                titleRow.appendChild(titleDiv);
+                titleRow.appendChild(moreButton);
+                storyContent.appendChild(titleRow);
                 
-                // Reason section
-                const reasonDiv = document.createElement('div');
-                const reasonLabel = document.createElement('div');
-                reasonLabel.className = 'reason-label ' + story.type;
-                reasonLabel.id = 'reason-' + index;
+                // Expanded content (hidden by default)
+                const expandedContent = document.createElement('div');
+                expandedContent.className = 'expanded-content';
+                expandedContent.id = 'expanded-' + index;
                 
                 // Add type tag for joy/wonder stories
                 if (story.type === 'joy' || story.type === 'wonder') {
                     const typeTag = document.createElement('span');
                     typeTag.className = 'story-type-tag ' + story.type;
                     typeTag.textContent = story.type;
-                    reasonLabel.appendChild(typeTag);
+                    expandedContent.appendChild(typeTag);
                 }
                 
-                // Add text content
-                const textNode = document.createTextNode(story.reason);
-                reasonLabel.appendChild(textNode);
+                // Reason text
+                const reasonText = document.createElement('div');
+                reasonText.className = 'reason-text';
+                reasonText.textContent = story.reason;
+                expandedContent.appendChild(reasonText);
                 
-                const moreButton = document.createElement('span');
-                moreButton.className = 'reason-more';
-                moreButton.textContent = 'more';
-                moreButton.onclick = function(e) { 
-                    e.stopPropagation();
-                    toggleReason(e, index); 
-                };
-                reasonDiv.appendChild(reasonLabel);
-                reasonDiv.appendChild(moreButton);
+                // Expanded reasoning
+                if (story.reasonExpanded) {
+                    const expandedReasonText = document.createElement('div');
+                    expandedReasonText.className = 'expanded-reason-text';
+                    expandedReasonText.textContent = story.reasonExpanded;
+                    expandedContent.appendChild(expandedReasonText);
+                }
                 
-                // Sources container
-                const sourcesContainer = document.createElement('div');
-                sourcesContainer.className = 'sources-container';
-                sourcesContainer.id = 'sources-' + index;
-                
+                // Sources
                 if (story.sources && story.sources.length > 0) {
+                    const sourcesContainer = document.createElement('div');
+                    sourcesContainer.className = 'sources-container';
+                    
                     const sourcesLabel = document.createElement('div');
                     sourcesLabel.className = 'sources-label';
                     sourcesLabel.textContent = 'Sources';
@@ -749,13 +727,26 @@
                     });
                     
                     sourcesContainer.appendChild(sourcesList);
+                    expandedContent.appendChild(sourcesContainer);
                 }
-                reasonDiv.appendChild(sourcesContainer);
-                storyRow.appendChild(reasonDiv);
                 
-                // Drag events - ONLY on drag handle for desktop
-                dragHandle.draggable = true;
-                dragHandle.addEventListener('dragstart', (e) => {
+                storyContent.appendChild(expandedContent);
+                storyRow.appendChild(storyContent);
+                
+                // Make entire row draggable
+                storyRow.draggable = true;
+                let isDraggingRow = false;
+                
+                // Desktop drag events on entire row
+                storyRow.addEventListener('dragstart', (e) => {
+                    // Don't start drag if clicking on rank number or more button
+                    if (e.target.classList.contains('rank-number') || 
+                        e.target.classList.contains('more-button')) {
+                        e.preventDefault();
+                        return;
+                    }
+                    
+                    isDraggingRow = true;
                     draggedElement = storyRow;
                     draggedIndex = index;
                     setTimeout(() => storyRow.classList.add('dragging'), 0);
@@ -765,6 +756,7 @@
                 });
                 
                 storyRow.addEventListener('dragend', (e) => {
+                    isDraggingRow = false;
                     storyRow.classList.remove('dragging');
                     document.querySelectorAll('.story-row').forEach(row => {
                         row.classList.remove('drag-over');
@@ -800,27 +792,38 @@
                     storyRow.classList.remove('drag-over');
                 });
                 
-                // Touch events - ONLY on drag handle for mobile
+                // Mobile touch events on entire row
                 let touchStartX = 0;
                 let touchStartY = 0;
                 let isTouchDragging = false;
                 let touchMoved = false;
-                let touchTimer = null;
+                let touchTarget = null;
                 
-                dragHandle.addEventListener('touchstart', (e) => {
+                storyRow.addEventListener('touchstart', (e) => {
+                    touchTarget = e.target;
+                    // Don't start drag if touching rank number or more button
+                    if (e.target.classList.contains('rank-number') || 
+                        e.target.classList.contains('more-button')) {
+                        return;
+                    }
+                    
                     touchStartX = e.touches[0].clientX;
                     touchStartY = e.touches[0].clientY;
                     isTouchDragging = false;
                     touchMoved = false;
                     
-                    // Immediate visual feedback
-                    dragHandle.classList.add('active');
-                    dragHandle.style.opacity = '1';
+                    // Visual feedback
                     storyRow.style.transform = 'scale(1.02)';
                     storyRow.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
                 }, {passive: true});
                 
-                dragHandle.addEventListener('touchmove', (e) => {
+                storyRow.addEventListener('touchmove', (e) => {
+                    // Don't drag if started on rank number or more button
+                    if (touchTarget && (touchTarget.classList.contains('rank-number') || 
+                        touchTarget.classList.contains('more-button'))) {
+                        return;
+                    }
+                    
                     const touch = e.touches[0];
                     const deltaX = Math.abs(touch.clientX - touchStartX);
                     const deltaY = Math.abs(touch.clientY - touchStartY);
@@ -852,10 +855,8 @@
                     }
                 }, {passive: false});
                 
-                dragHandle.addEventListener('touchend', (e) => {
+                storyRow.addEventListener('touchend', (e) => {
                     // Reset visual feedback
-                    dragHandle.classList.remove('active');
-                    dragHandle.style.opacity = '';
                     storyRow.style.transform = '';
                     storyRow.style.boxShadow = '';
                     
@@ -881,21 +882,20 @@
                     
                     isTouchDragging = false;
                     touchMoved = false;
+                    touchTarget = null;
                     draggedElement = null;
+                    
                     document.querySelectorAll('.story-row').forEach(row => {
                         row.classList.remove('drag-over', 'dragging');
                     });
                 }, {passive: false});
                 
-                dragHandle.addEventListener('touchcancel', (e) => {
-                    // Reset visual feedback
-                    dragHandle.classList.remove('active');
-                    dragHandle.style.opacity = '';
+                storyRow.addEventListener('touchcancel', (e) => {
                     storyRow.style.transform = '';
                     storyRow.style.boxShadow = '';
-                    
                     isTouchDragging = false;
                     touchMoved = false;
+                    touchTarget = null;
                     draggedElement = null;
                     document.querySelectorAll('.story-row').forEach(row => {
                         row.classList.remove('drag-over', 'dragging');
@@ -905,86 +905,19 @@
                 storyList.appendChild(storyRow);
             });
         }
-        function toggleSources(index) {
-            const sourcesContainer = document.getElementById('sources-' + index);
-            if (sourcesContainer) {
-                sourcesContainer.classList.toggle('visible');
-            }
-        }
-        function toggleReason(event, index) {
-            event.stopPropagation();
-            const reasonLabel = document.getElementById('reason-' + index);
-            const moreButton = event.target;
-            const storyData = stories.find(s => s.rank === currentOrder[index].rank);
+        
+        function toggleExpanded(index) {
+            const expandedContent = document.getElementById('expanded-' + index);
+            const moreButtons = document.querySelectorAll('.more-button');
+            const moreButton = moreButtons[index];
             
-            if (reasonLabel.classList.contains('expanded')) {
-                reasonLabel.classList.remove('expanded');
-                
-                // Clear and rebuild with just reason text
-                reasonLabel.innerHTML = '';
-                if (storyData.type === 'joy' || storyData.type === 'wonder') {
-                    const typeTag = document.createElement('span');
-                    typeTag.className = 'story-type-tag ' + storyData.type;
-                    typeTag.textContent = storyData.type;
-                    reasonLabel.appendChild(typeTag);
-                }
-                reasonLabel.appendChild(document.createTextNode(storyData.reason));
-                
+            if (expandedContent.classList.contains('visible')) {
+                expandedContent.classList.remove('visible');
                 moreButton.textContent = 'more';
             } else {
-                reasonLabel.classList.add('expanded');
-                
-                // Clear and rebuild with full text
-                reasonLabel.innerHTML = '';
-                if (storyData.type === 'joy' || storyData.type === 'wonder') {
-                    const typeTag = document.createElement('span');
-                    typeTag.className = 'story-type-tag ' + storyData.type;
-                    typeTag.textContent = storyData.type;
-                    reasonLabel.appendChild(typeTag);
-                }
-                const combinedText = storyData.reason + '\n\n' + storyData.reasonExpanded;
-                reasonLabel.appendChild(document.createTextNode(combinedText));
-                
+                expandedContent.classList.add('visible');
                 moreButton.textContent = 'less';
             }
-        }
-        function resetOrder() {
-            currentOrder = JSON.parse(JSON.stringify(initialScrambledOrder));
-            rankingsRevealed = false;
-            renderStories();
-            updateInfoText("Back to scrambled order");
-        }
-        
-        function showMyPicks() {
-            if (!myPicks) {
-                // First time: save current order
-                myPicks = JSON.parse(JSON.stringify(currentOrder));
-                updateInfoText("Your ranking saved! Click again to restore it.");
-            } else {
-                // Check if current order matches saved picks
-                const currentJSON = JSON.stringify(currentOrder.map(s => s.rank));
-                const savedJSON = JSON.stringify(myPicks.map(s => s.rank));
-                
-                if (currentJSON === savedJSON) {
-                    // Already showing saved picks, so update the save
-                    myPicks = JSON.parse(JSON.stringify(currentOrder));
-                    updateInfoText("Your ranking updated!");
-                } else {
-                    // Different order, so restore saved picks
-                    currentOrder = JSON.parse(JSON.stringify(myPicks));
-                    updateInfoText("Restored your saved ranking");
-                }
-            }
-            rankingsRevealed = false;
-            renderStories();
-        }
-        
-        function showJDPicks() {
-            // Show John's original ranking (sorted by rank field)
-            currentOrder = JSON.parse(JSON.stringify(originalStories));
-            rankingsRevealed = false;
-            renderStories();
-            updateInfoText("Showing JD's ranking");
         }
         
         function compareRankings() {
@@ -1002,7 +935,7 @@
                 } else {
                     rankDisplay.classList.remove('revealed');
                     rankDisplay.textContent = userRank;
-                    rankDisplay.title = 'Click to select rank';
+                    rankDisplay.title = 'Click to jump';
                 }
             });
             
@@ -1053,6 +986,45 @@
             }
         }
         
+        function resetOrder() {
+            currentOrder = JSON.parse(JSON.stringify(initialScrambledOrder));
+            rankingsRevealed = false;
+            renderStories();
+            updateInfoText("Back to scrambled order");
+        }
+        
+        function showMyPicks() {
+            if (!myPicks) {
+                // First time: save current order
+                myPicks = JSON.parse(JSON.stringify(currentOrder));
+                updateInfoText("Your ranking saved! Click again to restore it.");
+            } else {
+                // Check if current order matches saved picks
+                const currentJSON = JSON.stringify(currentOrder.map(s => s.rank));
+                const savedJSON = JSON.stringify(myPicks.map(s => s.rank));
+                
+                if (currentJSON === savedJSON) {
+                    // Already showing saved picks, so update the save
+                    myPicks = JSON.parse(JSON.stringify(currentOrder));
+                    updateInfoText("Your ranking updated!");
+                } else {
+                    // Different order, so restore saved picks
+                    currentOrder = JSON.parse(JSON.stringify(myPicks));
+                    updateInfoText("Restored your saved ranking");
+                }
+            }
+            rankingsRevealed = false;
+            renderStories();
+        }
+        
+        function showJDPicks() {
+            // Show John's original ranking (sorted by rank field)
+            currentOrder = JSON.parse(JSON.stringify(originalStories));
+            rankingsRevealed = false;
+            renderStories();
+            updateInfoText("Showing JD's ranking");
+        }
+        
         function updateInfoText(message, isPersistent = false) {
             const infoText = document.getElementById('infoText');
             if (message) {
@@ -1065,11 +1037,11 @@
                 
                 if (!isPersistent) {
                     setTimeout(() => {
-                        infoText.textContent = 'Rank today\'s news by importance: Hold & drag | to reorder • Click # to jump • Tap title for sources • Compare to see JD\'s ranking';
+                        infoText.textContent = 'Rank today\'s news: Drag story to reorder • Click # to jump • Click "more" for details';
                     }, 2000);
                 }
             } else {
-                infoText.textContent = 'Rank today\'s news by importance: Hold & drag | to reorder • Click # to jump • Tap title for sources • Compare to see JD\'s ranking';
+                infoText.textContent = 'Rank today\'s news: Drag story to reorder • Click # to jump • Click "more" for details';
             }
         }
         
