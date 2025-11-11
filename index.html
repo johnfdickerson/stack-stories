@@ -69,7 +69,7 @@
             border-radius: 8px;
             cursor: default;
             border: 1px solid #e0e0e0;
-            transition: all 0.2s;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
             user-select: none;
             align-items: start;
         }
@@ -110,8 +110,8 @@
             justify-content: center;
             cursor: grab;
             padding: 8px 8px;
-            opacity: 0.5;
-            transition: opacity 0.2s;
+            opacity: 0.6;
+            transition: opacity 0.15s ease;
             touch-action: none;
             min-width: 30px;
         }
@@ -123,16 +123,27 @@
             opacity: 0.8;
         }
         .drag-handle-line {
-            width: 3px;
-            height: 30px;
-            background: #666;
+            width: 4px;
+            height: 35px;
+            background: #555;
             border-radius: 2px;
+            transition: all 0.15s ease;
+        }
+        .drag-handle.active,
+        .drag-handle:active {
+            opacity: 1;
+        }
+        .drag-handle.active .drag-handle-line,
+        .drag-handle:active .drag-handle-line {
+            background: #0066cc;
+            width: 5px;
         }
         .story-row.dragging .drag-handle {
             opacity: 1;
         }
         .story-row.dragging .drag-handle-line {
             background: #0066cc;
+            width: 5px;
         }
         .story-title {
             cursor: pointer;
@@ -161,6 +172,24 @@
         .reason-label.expanded {
             -webkit-line-clamp: unset;
             overflow: visible;
+        }
+        .story-type-tag {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .story-type-tag.joy {
+            background: #fbbf24;
+            color: #78350f;
+        }
+        .story-type-tag.wonder {
+            background: #a78bfa;
+            color: #4c1d95;
         }
         .reason-more {
             font-size: 10px;
@@ -210,9 +239,10 @@
         .info-text {
             padding: 12px 16px;
             font-size: 11px;
-            color: #666;
+            color: #444;
             border-top: 1px solid #eee;
             min-height: 40px;
+            line-height: 1.4;
         }
         .footer {
             display: grid;
@@ -352,7 +382,7 @@
             <!-- Stories will be generated here -->
         </div>
         <div class="info-text" id="infoText">
-            Rank today's news by importance: Drag | to reorder • Click # to jump • Tap title for sources • Compare to see JD's ranking
+            Rank today's news by importance: Hold & drag | to reorder • Click # to jump • Tap title for sources • Compare to see JD's ranking
         </div>
         <div class="footer">
             <button class="btn-reset" onclick="resetOrder()">Reset</button>
@@ -378,9 +408,9 @@
         const originalStories = [
             {
                         "rank": 1,
-                        "title": "Trump demands States 'Undo' SNAP Payouts.",
+                        "title": "Trump: States 'Undo' SNAP Payouts.",
                         "reason": "42 million Americans depend on SNAP. Newest test in battle between Executive and Judicial branches. Political pain of hunger increases human stakes of political fight.",
-                        "reasonExpanded": "Lower courts forced payments, saying admin's refusal \"arbitrary and capricious\" causing \"irreparable harm\". Some states paid out benefits. Then SCOTUS (Jackson) issued a temporary \"administrative stay\" - not a ruling on the merits - based on the \"separation of powers\" argument that judges can't \"dictate... how scarce federal funds should be spent\". Then Admin. asked state to \"undo,\" what they'd paid.",
+                        "reasonExpanded": "Lower courts forced payments, saying admin's refusal \"arbitrary and capricious\" causing \"irreparable harm\". Some states paid out benefits. Then SCOTUS (Jackson) issued a temporary \"administrative stay\"—not a ruling on the merits—based on the \"separation of powers\" argument that judges can't \"dictate... how scarce federal funds should be spent\". Then Admin. asked state to \"undo,\" what they'd paid.",
                         "type": "serious",
                         "newsRank": "1st",
                         "communityRank": "1st",
@@ -420,9 +450,9 @@
             },
             {
                         "rank": 3,
-                        "title": "Ukraine: Russian Air Attack, City Capture, Stalled U.S. Aid",
-                        "reason": "Russian launch of 450+ missiles and drones targeting two nuclear plants risks a catastrophic meltdown that poisons the continent of Europe. all Europe. Territory of Pokrovsk is slipping. U.S. shutdown cut off $5 billion in weapons so they can't effectively shoot back.",
-                        "reasonExpanded": "That 450+ barrage is a massive, coordinated strike to overwhelm air defense, killing at least seven people and causing 16-hour power cuts. Pokrovsk's loss would mean a major strategic loss; the breach of Ukraine's eastern front in the Donetsk regioN.",
+                        "title": "Ukraine Tripple Threat.",
+                        "reason": "Russian launch of 450+ missiles and drones targeting two nuclear plants risks a catastrophic meltdown that poisons the continent of Europe. Territory of Pokrovsk is slipping. U.S. shutdown cut off $5 billion in weapons so they can't effectively shoot back.",
+                        "reasonExpanded": "That barrage is a massive (sign of Russ. Capacity). Loss of life: at least seven people. 16-hour power cuts. Pokrovsk's a breach of Ukraine's eastern front in the Donetsk region.",
                         "type": "serious",
                         "newsRank": "3rd",
                         "communityRank": "3rd",
@@ -458,7 +488,7 @@
             },
             {
                         "rank": 5,
-                        "title": "U.S. Federal Judge Resigns: President's \"Partisan Use of Law\"",
+                        "title": "U.S. Federal Judge Resigns.",
                         "reason": "Judges don't usually resign in this fashion. Reagan appointee diminishes charges of rank partisanship. Writing in The Atlantic, accuses Trump of \"using the law for partisan purposes.\" Protecting friends. Targeting enemies strikes at core of government functions.",
                         "reasonExpanded": "Significant data point in ongoing battle between Trump and courts.",
                         "type": "serious",
@@ -477,9 +507,9 @@
             },
             {
                         "rank": 6,
-                        "title": "Top Officials in 2016 Russia Probe subpoenaed.",
+                        "title": "2016 Russia Probe officials subpoenaed.",
                         "reason": "This escalates the Trump administration's investigation of those who investigated him. Subpoenaed: former CIA Director John Brennan, former FBI officials Peter Strzok and Lisa Page, and former Director of National Intelligence James Clapper.",
-                        "reasonExpanded": "The subpoenas are part of a stated \"retribution campaign\" against Trump's \"political adversaries\". The investigation, is pursuing a \"grand conspiracy\" theory that sources say is \"unsupported by the evidence\". This same campaign has raised concerns in the Senate about a potential indictment of Sen. Adam Schiff.",
+                        "reasonExpanded": "The subpoenas are part of a stated \"retribution campaign\" against Trump's \"political adversaries\". The investigation is pursuing a \"grand conspiracy\" theory that sources say is \"unsupported by the evidence\". This same campaign has raised concerns in the Senate about a potential indictment of Sen. Adam Schiff.",
                         "type": "serious",
                         "newsRank": "6th",
                         "communityRank": "6th",
@@ -500,12 +530,12 @@
             },
             {
                         "rank": 7,
-                        "title": "13 Infants with Botulism Across 10 States; Formula Recall",
-                        "reason": "ByHeart formula poses direct threat to infants. Parents need immediate action.",
-                        "reasonExpanded": "No such thing as \"a little light botulism.\" it's a form of paralysis caused by a potent neurotoxin. Requires intensive care. Ten states is a lot. Infant botulism is very rare. when you suddenly get 13 cases across 10 states (Arizona, California, Illinois, Minnesota, New Jersey, Oregon, Pennsylvania, Rhode Island, Texas, and Washington) all linked to one product, it signals a systemic failure.",
+                        "title": "Infants with Botulism/Formula recall.",
+                        "reason": "13 kids hospitalized in 10 states. ByHeart formula poses direct threat to infants. Parents need immediate action.",
+                        "reasonExpanded": "No such thing as \"a little light botulism.\" it's a form of paralysis caused by a potent neurotoxin. Requires intensive care. Ten states is a lot. Infant botulism is very rare. When you suddenly get 13 cases across 10 states (Arizona, California, Illinois, Minnesota, New Jersey, Oregon, Pennsylvania, Rhode Island, Texas, and Washington) all linked to one product, it signals a systemic failure.",
                         "type": "serious",
-                        "newsRank": "7th",
-                        "communityRank": "7th",
+                        "newsRank": "6th",
+                        "communityRank": "6th",
                         "sources": [
                                     {
                                                 "outlet": "CDC",
@@ -519,8 +549,8 @@
             },
             {
                         "rank": 8,
-                        "title": "White-Collar Job Market Freezes; Shutdown Blinds Analysts for Two Months",
-                        "reason": "A key economic indicator, tech hiring, is down 27% year-over-year. The 40-day shutdown has blocked the official jobs report for \"two consecutive months\", mean Federal Reserve and businesses can't plan or take measures to avoid a recession if one is coming.",
+                        "title": "White-Collar Job Market Freezes; Shutdown Blinds Analysts",
+                        "reason": "A key economic indicator, tech hiring, is down 27% year-over-year. The 40-day shutdown has blocked the official jobs report for \"two consecutive months\", meaning Federal Reserve and businesses can't plan or take measures to avoid a recession if one is coming.",
                         "reasonExpanded": "Signal of a \"bipolar economy\": AI and Wall Street are thriving while \"a lot of the middle class is getting hit\". Businesses state they aren't hiring. Connecticut Gov. Lamont, whose state's economy is tied to the financial sector, warned these are \"the early signs of what could be a potential recession\" as laid-off \"Corporate America\" workers face a \"hellish job market\".",
                         "type": "serious",
                         "newsRank": "8th",
@@ -534,9 +564,9 @@
             },
             {
                         "rank": 9,
-                        "title": "NYT Probe Alleges US part of UN-Defined Torture",
+                        "title": "NYT: US part of UN-Defined Torture",
                         "reason": "The U.S. government is now implicated in torture.",
-                        "reasonExpanded": "A NYT investigation found that 200+ Venezuelan men deported by the U.S. to an El Salvadoran prison were beaten and sexually assaulted by guards . An independent forensic analysis concluded these acts meet the UN's definition of torture. This isn't an isolated event; it's a direct consequence of the administration's immigration policy which has taken a hard line, including: ending Temporary Protected Status for 600,000 Venezuelans , conducting a \"two-month\" immigration crackdown in cities like Chicago, and deporting undocumented immigrants \"without due process\".",
+                        "reasonExpanded": "A NYT investigation found that 200+ Venezuelan men deported by the U.S. to an El Salvadoran prison were beaten and sexually assaulted by guards. An independent forensic analysis concluded these acts meet the UN's definition of torture. This isn't an isolated event; it's a direct consequence of the administration's immigration policy which has taken a hard line, including: ending Temporary Protected Status for 600,000 Venezuelans, conducting a \"two-month\" immigration crackdown in cities like Chicago, and deporting undocumented immigrants \"without due process\".",
                         "type": "serious",
                         "newsRank": "9th",
                         "communityRank": "9th",
@@ -557,12 +587,12 @@
             },
             {
                         "rank": 10,
-                        "title": "Hamas Returns Remains of Israeli Soldier Hadar Goldin After 11 Years",
-                        "reason": "Under U.S.-brokered peace deal, Hamas committed to returning 28 sets of remains. This brings \"bitter closure\" to an 11-year national ordeal for Israel it is also a key test of the current, rocky ceasefire.",
+                        "title": "Hamas Returns Remains of Israeli Soldier.",
+                        "reason": "Under U.S.-brokered peace deal, Hamas committed to returning 28 sets of remains. This brings \"bitter closure\" to an 11-year national ordeal for Israel and is also a key test of the current, rocky ceasefire.",
                         "reasonExpanded": "Israel accuses Hamas of slow-walking for leverage, while Hamas claims delays are due to the difficulty of digging up bodies from rubble. How that dispute gets resolved will determine if peace deal holds.",
                         "type": "serious",
-                        "newsRank": "10th",
-                        "communityRank": "10th",
+                        "newsRank": "9th",
+                        "communityRank": "9th",
                         "sources": [
                                     {
                                                 "outlet": "Washington Examiner",
@@ -668,7 +698,19 @@
                 const reasonLabel = document.createElement('div');
                 reasonLabel.className = 'reason-label ' + story.type;
                 reasonLabel.id = 'reason-' + index;
-                reasonLabel.textContent = story.reason;
+                
+                // Add type tag for joy/wonder stories
+                if (story.type === 'joy' || story.type === 'wonder') {
+                    const typeTag = document.createElement('span');
+                    typeTag.className = 'story-type-tag ' + story.type;
+                    typeTag.textContent = story.type;
+                    reasonLabel.appendChild(typeTag);
+                }
+                
+                // Add text content
+                const textNode = document.createTextNode(story.reason);
+                reasonLabel.appendChild(textNode);
+                
                 const moreButton = document.createElement('span');
                 moreButton.className = 'reason-more';
                 moreButton.textContent = 'more';
@@ -770,6 +812,12 @@
                     touchStartY = e.touches[0].clientY;
                     isTouchDragging = false;
                     touchMoved = false;
+                    
+                    // Immediate visual feedback
+                    dragHandle.classList.add('active');
+                    dragHandle.style.opacity = '1';
+                    storyRow.style.transform = 'scale(1.02)';
+                    storyRow.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
                 }, {passive: true});
                 
                 dragHandle.addEventListener('touchmove', (e) => {
@@ -805,6 +853,12 @@
                 }, {passive: false});
                 
                 dragHandle.addEventListener('touchend', (e) => {
+                    // Reset visual feedback
+                    dragHandle.classList.remove('active');
+                    dragHandle.style.opacity = '';
+                    storyRow.style.transform = '';
+                    storyRow.style.boxShadow = '';
+                    
                     if (isTouchDragging) {
                         e.preventDefault();
                         const touch = e.changedTouches[0];
@@ -834,6 +888,12 @@
                 }, {passive: false});
                 
                 dragHandle.addEventListener('touchcancel', (e) => {
+                    // Reset visual feedback
+                    dragHandle.classList.remove('active');
+                    dragHandle.style.opacity = '';
+                    storyRow.style.transform = '';
+                    storyRow.style.boxShadow = '';
+                    
                     isTouchDragging = false;
                     touchMoved = false;
                     draggedElement = null;
@@ -855,15 +915,36 @@
             event.stopPropagation();
             const reasonLabel = document.getElementById('reason-' + index);
             const moreButton = event.target;
+            const storyData = stories.find(s => s.rank === currentOrder[index].rank);
+            
             if (reasonLabel.classList.contains('expanded')) {
                 reasonLabel.classList.remove('expanded');
-                reasonLabel.textContent = stories.find(s => s.rank === currentOrder[index].rank).reason;
+                
+                // Clear and rebuild with just reason text
+                reasonLabel.innerHTML = '';
+                if (storyData.type === 'joy' || storyData.type === 'wonder') {
+                    const typeTag = document.createElement('span');
+                    typeTag.className = 'story-type-tag ' + storyData.type;
+                    typeTag.textContent = storyData.type;
+                    reasonLabel.appendChild(typeTag);
+                }
+                reasonLabel.appendChild(document.createTextNode(storyData.reason));
+                
                 moreButton.textContent = 'more';
             } else {
                 reasonLabel.classList.add('expanded');
-                const storyData = stories.find(s => s.rank === currentOrder[index].rank);
+                
+                // Clear and rebuild with full text
+                reasonLabel.innerHTML = '';
+                if (storyData.type === 'joy' || storyData.type === 'wonder') {
+                    const typeTag = document.createElement('span');
+                    typeTag.className = 'story-type-tag ' + storyData.type;
+                    typeTag.textContent = storyData.type;
+                    reasonLabel.appendChild(typeTag);
+                }
                 const combinedText = storyData.reason + '\n\n' + storyData.reasonExpanded;
-                reasonLabel.textContent = combinedText;
+                reasonLabel.appendChild(document.createTextNode(combinedText));
+                
                 moreButton.textContent = 'less';
             }
         }
@@ -926,21 +1007,69 @@
             });
             
             if (rankingsRevealed) {
-                updateInfoText("Comparing your ranking to JD's");
+                // Calculate differences and generate summary
+                const differences = currentOrder.map((story, userIndex) => ({
+                    story: story,
+                    userRank: userIndex + 1,
+                    jdRank: story.rank,
+                    diff: Math.abs((userIndex + 1) - story.rank)
+                }));
+                
+                // Sort by biggest difference
+                differences.sort((a, b) => b.diff - a.diff);
+                
+                // Find stories that moved most
+                const biggest = differences[0];
+                const secondBiggest = differences[1];
+                
+                let summary = '';
+                
+                if (biggest.diff === 0) {
+                    summary = 'Perfect match! You and JD ranked all stories identically.';
+                } else {
+                    // First sentence: biggest mover
+                    const biggestDir = biggest.userRank < biggest.jdRank ? 'higher' : 'lower';
+                    const biggestTitle = biggest.story.title.length > 40 ? 
+                        biggest.story.title.substring(0, 40) + '...' : 
+                        biggest.story.title;
+                    summary = `Your biggest difference: you ranked "${biggestTitle}" ${biggestDir} (#${biggest.userRank} vs JD's #${biggest.jdRank}). `;
+                    
+                    // Second sentence: second biggest or overall agreement
+                    const exactMatches = differences.filter(d => d.diff === 0).length;
+                    if (exactMatches > 0) {
+                        summary += `You agreed on ${exactMatches} ${exactMatches === 1 ? 'story' : 'stories'} exactly.`;
+                    } else if (secondBiggest.diff > 0) {
+                        const secondDir = secondBiggest.userRank < secondBiggest.jdRank ? 'higher' : 'lower';
+                        const secondTitle = secondBiggest.story.title.length > 40 ? 
+                            secondBiggest.story.title.substring(0, 40) + '...' : 
+                            secondBiggest.story.title;
+                        summary += `Also notable: "${secondTitle}" ranked ${secondDir} (#${secondBiggest.userRank} vs #${secondBiggest.jdRank}).`;
+                    }
+                }
+                
+                updateInfoText(summary, true);
             } else {
                 updateInfoText("");
             }
         }
         
-        function updateInfoText(message) {
+        function updateInfoText(message, isPersistent = false) {
             const infoText = document.getElementById('infoText');
             if (message) {
-                infoText.innerHTML = '<strong>' + escapeHtml(message) + '</strong>';
-                setTimeout(() => {
-                    infoText.textContent = 'Rank today\'s news by importance: Drag | to reorder • Click # to jump • Tap title for sources • Compare to see JD\'s ranking';
-                }, 2000);
+                // Don't make comparison summaries bold since they're longer
+                if (isPersistent) {
+                    infoText.textContent = message;
+                } else {
+                    infoText.innerHTML = '<strong>' + escapeHtml(message) + '</strong>';
+                }
+                
+                if (!isPersistent) {
+                    setTimeout(() => {
+                        infoText.textContent = 'Rank today\'s news by importance: Hold & drag | to reorder • Click # to jump • Tap title for sources • Compare to see JD\'s ranking';
+                    }, 2000);
+                }
             } else {
-                infoText.textContent = 'Rank today\'s news by importance: Drag | to reorder • Click # to jump • Tap title for sources • Compare to see JD\'s ranking';
+                infoText.textContent = 'Rank today\'s news by importance: Hold & drag | to reorder • Click # to jump • Tap title for sources • Compare to see JD\'s ranking';
             }
         }
         
