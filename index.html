@@ -1033,9 +1033,9 @@
                 myPicks = JSON.parse(JSON.stringify(currentOrder));
                 showTemporaryMessage("Your ranking saved!");
             } else {
-                // Check if current order matches saved picks
-                const currentJSON = JSON.stringify(currentOrder.map(s => s.rank));
-                const savedJSON = JSON.stringify(myPicks.map(s => s.rank));
+                // Check if current order matches saved picks by comparing story titles in order
+                const currentJSON = JSON.stringify(currentOrder.map(s => s.title));
+                const savedJSON = JSON.stringify(myPicks.map(s => s.title));
                 
                 if (currentJSON === savedJSON) {
                     // Already showing saved picks, so update the save
