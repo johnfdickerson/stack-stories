@@ -55,6 +55,15 @@
             background: #f9f9f9;
             align-items: center;
         }
+        .instructions-row {
+            padding: 10px 16px;
+            border-bottom: 1px solid #ddd;
+            font-size: 10px;
+            background: #f9f9f9;
+            color: #444;
+            line-height: 1.4;
+            text-align: center;
+        }
         .content {
             flex: 1;
             overflow-y: auto;
@@ -120,7 +129,7 @@
         }
         .story-title-row {
             display: flex;
-            align-items: baseline;
+            align-items: center;
             gap: 8px;
         }
         .story-title {
@@ -129,6 +138,14 @@
             font-weight: 600;
             line-height: 1.3;
             color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            min-width: 0;
+        }
+        .story-title-text {
+            flex: 1;
+            min-width: 0;
         }
         .more-button {
             font-size: 11px;
@@ -153,14 +170,13 @@
         }
         .story-type-tag {
             display: inline-block;
-            font-size: 9px;
+            font-size: 8px;
             font-weight: 600;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 3px;
-            margin-right: 6px;
-            margin-bottom: 4px;
             text-transform: uppercase;
             letter-spacing: 0.3px;
+            flex-shrink: 0;
         }
         .story-type-tag.joy {
             background: #fbbf24;
@@ -218,8 +234,9 @@
             font-size: 11px;
             color: #444;
             border-top: 1px solid #eee;
-            min-height: 40px;
+            min-height: 0;
             line-height: 1.4;
+            display: none;
         }
         .footer {
             display: grid;
@@ -338,9 +355,8 @@
             <p>by John Dickerson</p>
             <p style="font-size: 11px; margin-top: 4px;">November 9, 2025</p>
         </div>
-        <div class="column-header-row">
-            <div>#</div>
-            <div>Story</div>
+        <div class="instructions-row">
+            Rank today's news: Drag story to reorder • Click # to jump • Click "more" for details
         </div>
         <div class="content" id="storyList">
             <!-- Stories will be generated here -->
@@ -655,7 +671,19 @@
                 
                 const titleDiv = document.createElement('div');
                 titleDiv.className = 'story-title';
-                titleDiv.textContent = story.title;
+                
+                // Add type tag for joy/wonder stories at the start of title
+                if (story.type === 'joy' || story.type === 'wonder') {
+                    const typeTag = document.createElement('span');
+                    typeTag.className = 'story-type-tag ' + story.type;
+                    typeTag.textContent = story.type;
+                    titleDiv.appendChild(typeTag);
+                }
+                
+                const titleText = document.createElement('span');
+                titleText.className = 'story-title-text';
+                titleText.textContent = story.title;
+                titleDiv.appendChild(titleText);
                 
                 const moreButton = document.createElement('span');
                 moreButton.className = 'more-button';
@@ -677,14 +705,6 @@
                 const expandedContent = document.createElement('div');
                 expandedContent.className = 'expanded-content';
                 expandedContent.id = 'expanded-' + index;
-                
-                // Add type tag for joy/wonder stories
-                if (story.type === 'joy' || story.type === 'wonder') {
-                    const typeTag = document.createElement('span');
-                    typeTag.className = 'story-type-tag ' + story.type;
-                    typeTag.textContent = story.type;
-                    expandedContent.appendChild(typeTag);
-                }
                 
                 // Reason text
                 const reasonText = document.createElement('div');
@@ -827,19 +847,22 @@
                     const touch = e.touches[0];
                     const deltaX = Math.abs(touch.clientX - touchStartX);
                     const deltaY = Math.abs(touch.clientY - touchStartY);
-                    const threshold = 5;
+                    const threshold = 10; // Increased threshold to allow scrolling
                     
                     if (deltaX > threshold || deltaY > threshold) {
                         touchMoved = true;
                     }
                     
-                    if (touchMoved && !isTouchDragging) {
+                    // Only start dragging if horizontal movement is greater than vertical
+                    // This allows vertical scrolling
+                    if (touchMoved && !isTouchDragging && deltaX > deltaY) {
                         isTouchDragging = true;
                         draggedElement = storyRow;
                         draggedIndex = index;
                         storyRow.classList.add('dragging');
                     }
                     
+                    // Only prevent default if we're actually dragging
                     if (isTouchDragging) {
                         e.preventDefault();
                         const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -967,22 +990,33 @@
                         biggest.story.title;
                     summary = `Your biggest difference: you ranked "${biggestTitle}" ${biggestDir} (#${biggest.userRank} vs JD's #${biggest.jdRank}). `;
                     
-                    // Second sentence: second biggest or overall agreement
-                    const exactMatches = differences.filter(d => d.diff === 0).length;
-                    if (exactMatches > 0) {
-                        summary += `You agreed on ${exactMatches} ${exactMatches === 1 ? 'story' : 'stories'} exactly.`;
-                    } else if (secondBiggest.diff > 0) {
-                        const secondDir = secondBiggest.userRank < secondBiggest.jdRank ? 'higher' : 'lower';
-                        const secondTitle = secondBiggest.story.title.length > 40 ? 
-                            secondBiggest.story.title.substring(0, 40) + '...' : 
-                            secondBiggest.story.title;
-                        summary += `Also notable: "${secondTitle}" ranked ${secondDir} (#${secondBiggest.userRank} vs #${secondBiggest.jdRank}).`;
+                    // Second sentence: list exact matches by story number
+                    const exactMatches = differences.filter(d => d.diff === 0);
+                    if (exactMatches.length > 0) {
+                        const matchNumbers = exactMatches.map(m => m.story.rank).sort((a, b) => a - b);
+                        if (matchNumbers.length === 1) {
+                            summary += `You agreed on story #${matchNumbers[0]}.`;
+                        } else if (matchNumbers.length === 2) {
+                            summary += `You agreed on stories #${matchNumbers[0]} and #${matchNumbers[1]}.`;
+                        } else {
+                            const lastNum = matchNumbers.pop();
+                            summary += `You agreed on stories #${matchNumbers.join(', #')}, and #${lastNum}.`;
+                        }
+                    } else {
+                        // No exact matches, mention second biggest difference
+                        if (secondBiggest.diff > 0) {
+                            const secondDir = secondBiggest.userRank < secondBiggest.jdRank ? 'higher' : 'lower';
+                            const secondTitle = secondBiggest.story.title.length > 40 ? 
+                                secondBiggest.story.title.substring(0, 40) + '...' : 
+                                secondBiggest.story.title;
+                            summary += `Also notable: "${secondTitle}" ranked ${secondDir} (#${secondBiggest.userRank} vs #${secondBiggest.jdRank}).`;
+                        }
                     }
                 }
                 
                 updateInfoText(summary, true);
             } else {
-                updateInfoText("");
+                updateInfoText("", false);
             }
         }
         
@@ -990,14 +1024,14 @@
             currentOrder = JSON.parse(JSON.stringify(initialScrambledOrder));
             rankingsRevealed = false;
             renderStories();
-            updateInfoText("Back to scrambled order");
+            showTemporaryMessage("Back to scrambled order");
         }
         
         function showMyPicks() {
             if (!myPicks) {
                 // First time: save current order
                 myPicks = JSON.parse(JSON.stringify(currentOrder));
-                updateInfoText("Your ranking saved! Click again to restore it.");
+                showTemporaryMessage("Your ranking saved!");
             } else {
                 // Check if current order matches saved picks
                 const currentJSON = JSON.stringify(currentOrder.map(s => s.rank));
@@ -1006,11 +1040,11 @@
                 if (currentJSON === savedJSON) {
                     // Already showing saved picks, so update the save
                     myPicks = JSON.parse(JSON.stringify(currentOrder));
-                    updateInfoText("Your ranking updated!");
+                    showTemporaryMessage("Your ranking updated!");
                 } else {
                     // Different order, so restore saved picks
                     currentOrder = JSON.parse(JSON.stringify(myPicks));
-                    updateInfoText("Restored your saved ranking");
+                    showTemporaryMessage("Restored your saved ranking");
                 }
             }
             rankingsRevealed = false;
@@ -1022,26 +1056,26 @@
             currentOrder = JSON.parse(JSON.stringify(originalStories));
             rankingsRevealed = false;
             renderStories();
-            updateInfoText("Showing JD's ranking");
+            showTemporaryMessage("Showing JD's ranking");
+        }
+        
+        function showTemporaryMessage(message) {
+            const infoText = document.getElementById('infoText');
+            infoText.textContent = message;
+            infoText.style.display = 'block';
+            setTimeout(() => {
+                infoText.style.display = 'none';
+            }, 2000);
         }
         
         function updateInfoText(message, isPersistent = false) {
             const infoText = document.getElementById('infoText');
             if (message) {
-                // Don't make comparison summaries bold since they're longer
-                if (isPersistent) {
-                    infoText.textContent = message;
-                } else {
-                    infoText.innerHTML = '<strong>' + escapeHtml(message) + '</strong>';
-                }
-                
-                if (!isPersistent) {
-                    setTimeout(() => {
-                        infoText.textContent = 'Rank today\'s news: Drag story to reorder • Click # to jump • Click "more" for details';
-                    }, 2000);
-                }
+                infoText.textContent = message;
+                infoText.style.display = 'block';
             } else {
-                infoText.textContent = 'Rank today\'s news: Drag story to reorder • Click # to jump • Click "more" for details';
+                infoText.textContent = '';
+                infoText.style.display = 'none';
             }
         }
         
