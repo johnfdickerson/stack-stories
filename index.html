@@ -882,7 +882,7 @@
                     const touch = e.touches[0];
                     const deltaX = Math.abs(touch.clientX - touchStartX);
                     const deltaY = Math.abs(touch.clientY - touchStartY);
-                    const threshold = 8; // Lowered threshold for better responsiveness
+                    const threshold = 8;
                     
                     // Mark as moved if threshold exceeded
                     if (deltaX > threshold || deltaY > threshold) {
@@ -892,24 +892,22 @@
                     // Start dragging if:
                     // 1. Touch has moved beyond threshold
                     // 2. Not already dragging
-                    // 3. Either: horizontal movement OR held for 200ms (long press intent)
+                    // 3. Horizontal movement is significantly greater than vertical (clear horizontal intent)
                     const timeSinceStart = Date.now() - touchStartTime;
                     const isHorizontalDrag = deltaX > deltaY && deltaX > threshold;
-                    const isLongPress = timeSinceStart > 200 && (deltaX > 3 || deltaY > 3);
+                    const isLongPressHorizontal = timeSinceStart > 250 && deltaX > 5 && deltaX > deltaY;
                     
-                    if (touchMoved && !isTouchDragging && (isHorizontalDrag || isLongPress)) {
+                    if (touchMoved && !isTouchDragging && (isHorizontalDrag || isLongPressHorizontal)) {
                         isTouchDragging = true;
                         draggedElement = storyRow;
                         draggedIndex = index;
                         storyRow.classList.add('dragging');
                     }
                     
-                    // Prevent default if we're dragging or if moved beyond small threshold (prevents text selection)
-                    if (isTouchDragging || (deltaX > 3 || deltaY > 3)) {
-                        e.preventDefault();
-                    }
-                    
+                    // CRITICAL: Only prevent default if we're actually dragging
+                    // This allows vertical scrolling to work normally
                     if (isTouchDragging) {
+                        e.preventDefault();
                         const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
                         const targetRow = elementBelow?.closest('.story-row');
                         
