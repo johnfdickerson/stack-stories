@@ -385,7 +385,7 @@
             <p style="font-size: 11px; margin-top: 4px;">November 9, 2025</p>
         </div>
         <div class="instructions-row">
-            Rank today's news: Drag story to reorder • Click # to jump • Click "more" for details
+            Rank today's news: Click # to jump, hold # to drag. "More" for details and sources.
         </div>
         <div class="content" id="storyList">
             <!-- Stories will be generated here -->
@@ -842,15 +842,28 @@
                     storyRow.classList.remove('drag-over');
                 });
                 
+                // Click to jump functionality
+                rankDiv.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!wasRecentDrag) {
+                        openNumberPicker(index);
+                    }
+                    wasRecentDrag = false;
+                });
+                
                 // Mobile touch events - drag handle on rank number
                 let touchStartX = 0;
                 let touchStartY = 0;
                 let isTouchDragging = false;
                 let holdTimeout = null;
                 let isHolding = false;
+                let wasRecentDrag = false;
+                let dragTimeoutId = null;
                 
                 rankDiv.addEventListener('touchstart', (e) => {
                     e.preventDefault();
+                    wasRecentDrag = false;
+                    clearTimeout(dragTimeoutId);
                     touchStartX = e.touches[0].clientX;
                     touchStartY = e.touches[0].clientY;
                     
@@ -883,6 +896,7 @@
                     // If holding and moved, start dragging
                     if (isHolding && !isTouchDragging && (deltaX > 5 || deltaY > 5)) {
                         e.preventDefault();
+                        wasRecentDrag = true;
                         isTouchDragging = true;
                         draggedElement = storyRow;
                         draggedIndex = index;
@@ -934,6 +948,12 @@
                     isTouchDragging = false;
                     isHolding = false;
                     draggedElement = null;
+                    
+                    // Set flag to ignore click for a bit after drag
+                    wasRecentDrag = true;
+                    dragTimeoutId = setTimeout(() => {
+                        wasRecentDrag = false;
+                    }, 100);
                     
                     document.querySelectorAll('.story-row').forEach(row => {
                         row.classList.remove('drag-over', 'dragging');
