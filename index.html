@@ -842,70 +842,54 @@
                     storyRow.classList.remove('drag-over');
                 });
                 
-                // Mobile touch events on entire row
+                // Mobile touch events - drag handle on rank number
                 let touchStartX = 0;
                 let touchStartY = 0;
                 let isTouchDragging = false;
-                let touchMoved = false;
-                let touchTarget = null;
-                let touchStartTime = 0;
+                let holdTimeout = null;
+                let isHolding = false;
                 
-                storyRow.addEventListener('touchstart', (e) => {
-                    touchTarget = e.target;
-                    touchStartTime = Date.now();
-                    
-                    // Don't start drag if touching rank number, more button, or expanded content
-                    if (e.target.classList.contains('rank-number') || 
-                        e.target.classList.contains('more-button') ||
-                        e.target.closest('.expanded-content')) {
-                        return;
-                    }
-                    
+                rankDiv.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
                     touchStartX = e.touches[0].clientX;
                     touchStartY = e.touches[0].clientY;
-                    isTouchDragging = false;
-                    touchMoved = false;
                     
-                    // Visual feedback
-                    storyRow.style.transform = 'scale(1.02)';
-                    storyRow.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-                }, {passive: true});
+                    // Set timeout for hold gesture (200ms)
+                    holdTimeout = setTimeout(() => {
+                        isHolding = true;
+                        // Visual feedback when hold is detected
+                        storyRow.style.transform = 'scale(1.03)';
+                        storyRow.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
+                        storyRow.style.zIndex = '100';
+                        
+                        // Haptic feedback if available
+                        if (navigator.vibrate) {
+                            navigator.vibrate(50);
+                        }
+                    }, 200);
+                }, {passive: false});
                 
-                storyRow.addEventListener('touchmove', (e) => {
-                    // Don't drag if started on rank number, more button, or expanded content
-                    if (touchTarget && (touchTarget.classList.contains('rank-number') || 
-                        touchTarget.classList.contains('more-button') ||
-                        touchTarget.closest('.expanded-content'))) {
-                        return;
-                    }
-                    
+                rankDiv.addEventListener('touchmove', (e) => {
                     const touch = e.touches[0];
                     const deltaX = Math.abs(touch.clientX - touchStartX);
                     const deltaY = Math.abs(touch.clientY - touchStartY);
-                    const threshold = 8;
                     
-                    // Mark as moved if threshold exceeded
-                    if (deltaX > threshold || deltaY > threshold) {
-                        touchMoved = true;
+                    // If moved before hold timeout, cancel the hold
+                    if (!isHolding && (deltaX > 15 || deltaY > 15)) {
+                        clearTimeout(holdTimeout);
+                        return;
                     }
                     
-                    // Start dragging if:
-                    // 1. Touch has moved beyond threshold
-                    // 2. Not already dragging
-                    // 3. Horizontal movement is significantly greater than vertical (clear horizontal intent)
-                    const timeSinceStart = Date.now() - touchStartTime;
-                    const isHorizontalDrag = deltaX > deltaY && deltaX > threshold;
-                    const isLongPressHorizontal = timeSinceStart > 250 && deltaX > 5 && deltaX > deltaY;
-                    
-                    if (touchMoved && !isTouchDragging && (isHorizontalDrag || isLongPressHorizontal)) {
+                    // If holding and moved, start dragging
+                    if (isHolding && !isTouchDragging && (deltaX > 5 || deltaY > 5)) {
+                        e.preventDefault();
                         isTouchDragging = true;
                         draggedElement = storyRow;
                         draggedIndex = index;
                         storyRow.classList.add('dragging');
                     }
                     
-                    // CRITICAL: Only prevent default if we're actually dragging
-                    // This allows vertical scrolling to work normally
+                    // Only prevent default if we're actually dragging
                     if (isTouchDragging) {
                         e.preventDefault();
                         const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -921,13 +905,14 @@
                     }
                 }, {passive: false});
                 
-                storyRow.addEventListener('touchend', (e) => {
-                    // Reset visual feedback
+                rankDiv.addEventListener('touchend', (e) => {
+                    clearTimeout(holdTimeout);
+                    
                     storyRow.style.transform = '';
                     storyRow.style.boxShadow = '';
+                    storyRow.style.zIndex = '';
                     
                     if (isTouchDragging) {
-                        e.preventDefault();
                         const touch = e.changedTouches[0];
                         const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
                         const targetRow = elementBelow?.closest('.story-row');
@@ -947,26 +932,26 @@
                     }
                     
                     isTouchDragging = false;
-                    touchMoved = false;
-                    touchTarget = null;
+                    isHolding = false;
                     draggedElement = null;
                     
                     document.querySelectorAll('.story-row').forEach(row => {
                         row.classList.remove('drag-over', 'dragging');
                     });
-                }, {passive: false});
+                }, {passive: true});
                 
-                storyRow.addEventListener('touchcancel', (e) => {
+                rankDiv.addEventListener('touchcancel', (e) => {
+                    clearTimeout(holdTimeout);
                     storyRow.style.transform = '';
                     storyRow.style.boxShadow = '';
+                    storyRow.style.zIndex = '';
                     isTouchDragging = false;
-                    touchMoved = false;
-                    touchTarget = null;
+                    isHolding = false;
                     draggedElement = null;
                     document.querySelectorAll('.story-row').forEach(row => {
                         row.classList.remove('drag-over', 'dragging');
                     });
-                });
+                }, {passive: true});
                 
                 storyList.appendChild(storyRow);
             });
